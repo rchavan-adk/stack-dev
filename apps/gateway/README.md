@@ -61,8 +61,11 @@ Denials are ledgered exactly like the portal mock: a `ModelCall` row
 Allowed calls are a `ModelCall` row with real `tokensIn/tokensOut/costUsd`
 (spend pages read these; no Event row, matching the mock's ledger shape).
 
-Responses carry `x-stack-item`, `x-stack-cost-usd`, `x-stack-spend-usd`, and
-`x-stack-budget-warning` when under 20 percent of budget remains.
+Non-streaming responses carry `x-stack-item`, `x-stack-cost-usd`,
+`x-stack-spend-usd`, and `x-stack-budget-warning` when under 20 percent of
+budget remains. A streamed response has already sent its headers by the time
+the cost is known, so it carries no receipt; the ledger row is written either
+way, and that is the record that counts.
 
 ## Pricing
 

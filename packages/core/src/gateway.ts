@@ -22,10 +22,15 @@ export function priceFor(model: string): ModelPrice | undefined {
   return MODEL_ALLOWLIST.find((entry) => entry.model === model);
 }
 
+/**
+ * Six decimals, not two: a real agent call can cost a few thousandths of a
+ * cent, and rounding those to zero means a busy engagement meters nothing at
+ * all. The ledger keeps the precision; display layers round for people.
+ */
 export function costOf(price: ModelPrice, tokensIn: number, tokensOut: number): number {
   const cost =
     (tokensIn / 1_000_000) * price.inPerMillion + (tokensOut / 1_000_000) * price.outPerMillion;
-  return Number(cost.toFixed(4));
+  return Number(cost.toFixed(6));
 }
 
 /**

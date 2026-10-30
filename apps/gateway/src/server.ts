@@ -267,7 +267,10 @@ async function handleMessages(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const finish = async (tokensIn: number, tokensOut: number): Promise<void> => {
+  // A streamed response has already sent its headers by the time the cost is
+  // known, so the x-stack-* receipt is only available on non-streaming calls.
+  // The ledger row is written either way; that is the record that counts.
+  const finish = async (tokensIn: number, tokensOut: number, canSetHeaders = true): Promise<void> => {
     const cost = costOf(price, tokensIn, tokensOut);
     await prisma.modelCall.create({
       data: {
@@ -282,14 +285,16 @@ async function handleMessages(req: Request, res: Response): Promise<void> {
       },
     });
     const remaining = ctx.project.budgetUsd - (usedBefore + cost);
-    res.set("x-stack-item", issue?.handle ?? "");
-    res.set("x-stack-cost-usd", cost.toFixed(4));
-    res.set("x-stack-spend-usd", (usedBefore + cost).toFixed(4));
-    if (remaining < ctx.project.budgetUsd * BUDGET_WARN_FRACTION) {
-      res.set("x-stack-budget-warning", "under 20 percent of budget remaining");
+    if (canSetHeaders && !res.headersSent) {
+      res.set("x-stack-item", issue?.handle ?? "");
+      res.set("x-stack-cost-usd", cost.toFixed(6));
+      res.set("x-stack-spend-usd", (usedBefore + cost).toFixed(6));
+      if (remaining < ctx.project.budgetUsd * BUDGET_WARN_FRACTION) {
+        res.set("x-stack-budget-warning", "under 20 percent of budget remaining");
+      }
     }
     console.log(
-      `[gateway] ${model} ${issue?.handle ?? "unattributed"} in=${tokensIn} out=${tokensOut} $${cost.toFixed(4)} spend=$${(usedBefore + cost).toFixed(2)}/${ctx.project.budgetUsd}`,
+      `[gateway] ${model} ${issue?.handle ?? "unattributed"} in=${tokensIn} out=${tokensOut} $${cost.toFixed(6)} spend=$${(usedBefore + cost).toFixed(4)}/${ctx.project.budgetUsd}`,
     );
   };
 
@@ -328,7 +333,13 @@ async function handleMessages(req: Request, res: Response): Promise<void> {
         /* client gone */
       }
       const usage = parseStreamUsage(sse);
-      await finish(usage.tokensIn, usage.tokensOut);
+      try {
+        await finish(usage.tokensIn, usage.tokensOut, false);
+      } catch (error) {
+        // The client already has its answer; a metering failure must be loud
+        // in the log rather than a 500 written onto a finished response.
+        console.error("[gateway] failed to meter a streamed call:", error);
+      }
     }
     return;
   }
