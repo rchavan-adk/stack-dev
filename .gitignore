@@ -20,6 +20,12 @@ mock-github/workspace/
 .env
 .env.local
 
+# Everything under secrets/ is a credential of some kind: the Anthropic key, and
+# tokens captured while verifying a deployment. Ignore the whole directory rather
+# than listing files one by one, so a new secret cannot be committed by accident
+# because nobody remembered to add it here.
+secrets/
+
 # per-repo webhook secret a local hook reads before signing a delivery
 stack-webhook-secret
 
