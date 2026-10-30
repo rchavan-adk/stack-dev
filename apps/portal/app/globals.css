@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  themes:
+    miracle --default,
+    miracle-dark --prefersdark;
+}
+
+/* Miracle Software Systems brand palette, taken from the corporate deck. */
+@plugin "daisyui/theme" {
+  name: "miracle";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: #ffffff;
+  --color-base-200: #f7f9fb;
+  --color-base-300: #e4e4e6;
+  --color-base-content: #232527;
+
+  --color-primary: #00aae7;
+  --color-primary-content: #ffffff;
+  --color-secondary: #0d416b;
+  --color-secondary-content: #ffffff;
+  --color-accent: #2368a0;
+  --color-accent-content: #ffffff;
+  --color-neutral: #232527;
+  --color-neutral-content: #f4f4f5;
+
+  --color-info: #00aae7;
+  --color-info-content: #ffffff;
+  --color-success: #15a46e;
+  --color-success-content: #ffffff;
+  --color-warning: #e8a30c;
+  --color-warning-content: #232527;
+  --color-error: #ef4048;
+  --color-error-content: #ffffff;
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.375rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "miracle-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: #1b1d1f;
+  --color-base-200: #232527;
+  --color-base-300: #3d3f41;
+  --color-base-content: #e4e4e6;
+
+  --color-primary: #00aae7;
+  --color-primary-content: #06212c;
+  --color-secondary: #2368a0;
+  --color-secondary-content: #ffffff;
+  --color-accent: #00aae7;
+  --color-accent-content: #06212c;
+  --color-neutral: #e4e4e6;
+  --color-neutral-content: #232527;
+
+  --color-info: #00aae7;
+  --color-info-content: #06212c;
+  --color-success: #2bbd87;
+  --color-success-content: #06212c;
+  --color-warning: #e8a30c;
+  --color-warning-content: #232527;
+  --color-error: #ef4048;
+  --color-error-content: #ffffff;
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.375rem;
+  --radius-box: 0.75rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* Brand surface used by the login screen and the marketing header. */
+.miracle-gradient {
+  background: linear-gradient(135deg, #0d416b 0%, #2368a0 55%, #00aae7 100%);
+}
+
+.stack-mono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}

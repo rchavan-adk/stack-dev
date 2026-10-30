@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+#
+# pre-receive — the mock GitHub server-side backstop.
+#
+# In the real system this is the required status check on the default branch,
+# enforced by GitHub and not by the developer's laptop. Two rules:
+#
+#   1. every pushed commit subject carries a Stack AI item handle (STACK-<n>)
+#   2. nothing is pushed straight to a protected branch; merges come from
+#      merge.sh, which sets STACK_MERGE=1
+#
+# Because it runs on the "server", `git push --no-verify` does not get around it.
+# That is the whole point of the demo.
+
+set -uo pipefail
+
+PATTERN="${STACK_HANDLE_PATTERN:-STACK-[0-9]+}"
+PROTECTED="${STACK_PROTECTED_BRANCHES:-main master release}"
+ZERO="0000000000000000000000000000000000000000"
+FAILED=0
+
+reject_no_handle() {
+  local sha="$1" subject="$2"
+  cat >&2 <<EOF
+
+  Commit rejected by the Miracle harness.
+
+  Every commit must reference a Stack AI item, pattern: $PATTERN
+  Offending commit:
+      ${sha:0:8} $subject
+
+  Fix it like this:
+      STACK-123: $subject
+
+  Open items:  stack issues --mine
+  Why:         the item handle joins commits, spend and status in the portal.
+
+EOF
+}
+
+reject_protected() {
+  local branch="$1"
+  cat >&2 <<EOF
+
+  Push rejected by the Miracle harness.
+
+  '$branch' is protected. Open a pull request instead:
+      git switch -c stack/STACK-123-<slug>
+      git push -u origin stack/STACK-123-<slug>
+
+  The remote runs this check, so --no-verify does not help here.
+
+EOF
+}
+
+while read -r old new ref; do
+  [ -z "${ref:-}" ] && continue
+  case "$ref" in
+    refs/heads/*) ;;
+    *) continue ;;
+  esac
+
+  branch="${ref#refs/heads/}"
+
+  # deleting a branch is always fine
+  [ "$new" = "$ZERO" ] && continue
+
+  # --- rule 2: protected branches -------------------------------------------
+  is_protected=0
+  for protected in $PROTECTED; do
+    [ "$branch" = "$protected" ] && is_protected=1
+  done
+  if [ "$is_protected" = "1" ] && [ "$old" != "$ZERO" ] && [ "${STACK_MERGE:-}" != "1" ]; then
+    reject_protected "$branch"
+    FAILED=1
+  fi
+
+  # --- rule 1: every new commit carries an item handle ----------------------
+  if [ "$old" = "$ZERO" ]; then
+    COMMITS="$(git rev-list "$new" --not --all 2>/dev/null || git rev-list "$new" 2>/dev/null || true)"
+  else
+    COMMITS="$(git rev-list "$old..$new" 2>/dev/null || true)"
+  fi
+
+  while read -r sha; do
+    [ -z "$sha" ] && continue
+    subject="$(git log -1 --format=%s "$sha" 2>/dev/null || true)"
+    case "$subject" in
+      "Merge "*|"Revert "*) continue ;;
+    esac
+    if ! printf '%s' "$subject" | grep -qE "$PATTERN"; then
+      reject_no_handle "$sha" "$subject"
+      FAILED=1
+    fi
+  done <<< "$COMMITS"
+done
+
+if [ "$FAILED" -ne 0 ]; then
+  echo "  pre-receive: push rejected, nothing was updated" >&2
+  exit 1
+fi
+
+exit 0

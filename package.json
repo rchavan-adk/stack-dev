@@ -1,0 +1,39 @@
+{
+  "name": "stack-ecosystem",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Stack AI portal, MCP server, stack CLI and Miracle harness packs",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "cli/*"
+  ],
+  "scripts": {
+    "setup": "npm install && npm run db:push && npm run db:seed",
+    "db:push": "npm -w @stack/db run db:push",
+    "db:seed": "npm -w @stack/db run seed",
+    "db:studio": "npm -w @stack/db run studio",
+    "db:reset": "npm -w @stack/db run reset",
+    "dev": "npm run dev:portal",
+    "dev:portal": "npm -w @stack/portal run dev",
+    "dev:mcp": "npm -w @stack/mcp run dev",
+    "build": "npm -w @stack/portal run build",
+    "typecheck": "npm -ws --if-present run typecheck",
+    "install:cli": "npm install -g ./cli/stack",
+    "mock-github:init": "bash mock-github/init.sh"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "prisma@6.19.3": true,
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.2": true
+  }
+}

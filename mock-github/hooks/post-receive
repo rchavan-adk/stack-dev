@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+#
+# post-receive — the mock GitHub webhook.
+#
+# In the real system this is the read-only GitHub App the portal installed: it
+# sees that a branch moved and tells the portal, which moves the card. Here it is
+# a curl call to POST /api/git/events.
+#
+#   feature branch  -> action "push"   (the portal moves the card to IN_REVIEW)
+#   protected branch -> action "merge" (the portal moves it to AWAITING_VALIDATION)
+#
+# It must never fail the push: the portal being down is the portal's problem.
+
+set -uo pipefail
+
+GIT_DIR_PATH="$(git rev-parse --absolute-git-dir 2>/dev/null || git rev-parse --git-dir 2>/dev/null || echo .)"
+PORTAL_URL="${PORTAL_URL:-$(cat "$GIT_DIR_PATH/stack-portal-url" 2>/dev/null || echo http://localhost:4200)}"
+REPO_NAME="${STACK_REPO:-$(basename "$GIT_DIR_PATH" .git)}"
+if [ -z "$REPO_NAME" ]; then
+  REPO_NAME="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || echo repo)")"
+fi
+PROTECTED="${STACK_PROTECTED_BRANCHES:-main master release}"
+MAX_COMMITS="${STACK_MAX_COMMITS:-20}"
+ZERO="0000000000000000000000000000000000000000"
+
+say() { printf '%s\n' "$*"; }
+
+json_escape() {
+  local text="$1"
+  text="${text//\\/\\\\}"
+  text="${text//\"/\\\"}"
+  text="${text//$'\n'/\\n}"
+  text="${text//$'\r'/}"
+  text="${text//$'\t'/\\t}"
+  printf '%s' "$text"
+}
+
+while read -r old new ref; do
+  [ -z "${ref:-}" ] && continue
+  case "$ref" in
+    refs/heads/*) ;;
+    *) continue ;;
+  esac
+
+  branch="${ref#refs/heads/}"
+  [ "$new" = "$ZERO" ] && continue
+
+  action="push"
+  for protected in $PROTECTED; do
+    [ "$branch" = "$protected" ] && action="merge"
+  done
+
+  if [ "$old" = "$ZERO" ]; then
+    # brand new branch: only the commits that are not already on another branch,
+    # otherwise the seed commit would look like fresh work and move its card
+    OTHERS="$(git for-each-ref --format='%(refname)' refs/heads/ 2>/dev/null | grep -vFx "$ref" || true)"
+    if [ -n "$OTHERS" ]; then
+      COMMITS="$(git rev-list --max-count="$MAX_COMMITS" "$new" --not $OTHERS 2>/dev/null || true)"
+    else
+      COMMITS="$(git rev-list --max-count="$MAX_COMMITS" "$new" 2>/dev/null || true)"
+    fi
+  else
+    COMMITS="$(git rev-list --max-count="$MAX_COMMITS" "$old..$new" 2>/dev/null || true)"
+  fi
+
+  COMMIT_JSON=""
+  COUNT=0
+  while read -r sha; do
+    [ -z "$sha" ] && continue
+    subject="$(git log -1 --format=%s "$sha" 2>/dev/null || true)"
+    author="$(git log -1 --format='%an <%ae>' "$sha" 2>/dev/null || true)"
+    entry="{\"sha\":\"$sha\",\"message\":\"$(json_escape "$subject")\",\"author\":\"$(json_escape "$author")\"}"
+    COMMIT_JSON="${COMMIT_JSON:+$COMMIT_JSON,}$entry"
+    COUNT=$((COUNT + 1))
+  done <<< "$COMMITS"
+
+  PR_FIELD=""
+  [ -n "${STACK_PR:-}" ] && PR_FIELD=",\"prNumber\":${STACK_PR}"
+  PAYLOAD="{\"repo\":\"$(json_escape "$REPO_NAME")\",\"action\":\"$action\",\"branch\":\"$(json_escape "$branch")\",\"commits\":[${COMMIT_JSON}]${PR_FIELD}}"
+
+  say ""
+  say "  post-receive  $REPO_NAME  action=$action  branch=$branch  commits=$COUNT"
+  say "  post-receive  -> POST $PORTAL_URL/api/git/events"
+
+  if ! command -v curl >/dev/null 2>&1; then
+    say "  post-receive  curl not available, push accepted without moving cards"
+    continue
+  fi
+
+  RESPONSE="$(curl -fsS --max-time 4 \
+    -X POST \
+    -H 'Content-Type: application/json' \
+    -d "$PAYLOAD" \
+    "$PORTAL_URL/api/git/events" 2>/dev/null)" || RESPONSE=""
+
+  if [ -n "$RESPONSE" ]; then
+    say "  post-receive  <- $RESPONSE"
+  else
+    say "  post-receive  portal not reachable at $PORTAL_URL, push accepted, no cards moved"
+    say "  post-receive  payload was: $PAYLOAD"
+  fi
+done
+
+exit 0

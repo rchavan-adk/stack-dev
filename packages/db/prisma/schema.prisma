@@ -1,0 +1,265 @@
+// Stack AI portal data model.
+// SQLite for the mock. Moving to Postgres is a datasource change plus `prisma migrate`;
+// string status columns are used instead of enums because SQLite has no enum support.
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      String // ADMIN | LEAD | DEVELOPER | CLIENT
+  title     String?
+  createdAt DateTime @default(now())
+
+  memberships     Membership[]
+  assignedIssues  Issue[]          @relation("assignee")
+  tokens          ApiToken[]
+  approvals       Approval[]
+  modelCalls      ModelCall[]
+  publishedPacks  HarnessVersion[] @relation("publisher")
+  approvedSpecs   Spec[]           @relation("specApprover")
+}
+
+model Project {
+  id            String   @id @default(cuid())
+  key           String   @unique // ACME
+  name          String
+  client        String
+  summary       String
+  status        String   @default("ACTIVE") // ACTIVE | PAUSED | CLOSED
+  handlePattern String   @default("STACK-[0-9]+")
+  gatewayUrl    String   @default("https://litellm.miraclesoft.example")
+  budgetUsd     Float    @default(500)
+  webhookBaseUrl String? // public base URL the CLI reports for webhook delivery
+  createdAt     DateTime @default(now())
+
+  memberships Membership[]
+  repos       Repo[]
+  waves       Wave[]
+  issues      Issue[]
+  specs       Spec[]
+  packs       HarnessPack[]
+  events      Event[]
+  tokens      ApiToken[]
+  approvals   Approval[]
+  modelCalls  ModelCall[]
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  userId    String
+  projectId String
+  role      String // LEAD | DEVELOPER | CLIENT | ADMIN
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+}
+
+model Repo {
+  id            String   @id @default(cuid())
+  projectId     String
+  name          String // acme/checkout
+  provider      String   @default("mock-github")
+  remotePath    String // absolute path of the bare repo standing in for GitHub
+  defaultBranch String   @default("main")
+  webhookSecret String? // secret used to sign incoming webhook payloads
+  githubAppId   String? // mock-github app installation id that owns the webhook
+  linkedAt      DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, name])
+}
+
+model Wave {
+  id        String    @id @default(cuid())
+  projectId String
+  number    Int
+  name      String
+  goal      String
+  status    String    @default("PLANNED") // PLANNED | ACTIVE | DONE
+  startsOn  DateTime?
+  endsOn    DateTime?
+  createdAt DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  issues  Issue[]
+
+  @@unique([projectId, number])
+}
+
+model Issue {
+  id         String   @id @default(cuid())
+  projectId  String
+  waveId     String?
+  handle     String   @unique // STACK-101
+  title      String
+  body       String
+  type       String   @default("FEATURE") // FEATURE | BUG | CHORE | SPIKE
+  status     String   @default("BACKLOG") // BACKLOG | APPROVED | IN_PROGRESS | IN_REVIEW | AWAITING_VALIDATION | DONE
+  assigneeId String?
+  estimate   Int?
+  acceptance String   @default("[]") // JSON array of acceptance criteria
+  branch     String?
+  prNumber   Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project  Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  wave     Wave?       @relation(fields: [waveId], references: [id], onDelete: SetNull)
+  assignee User?       @relation("assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  spec     Spec?
+  events   Event[]
+  modelCalls ModelCall[]
+
+  @@index([projectId, status])
+}
+
+model Spec {
+  id            String   @id @default(cuid())
+  projectId     String
+  issueId       String?  @unique
+  title         String
+  body          String
+  status        String   @default("DRAFT") // DRAFT | SUBMITTED | APPROVED | REJECTED
+  approvedById  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  issue      Issue?  @relation(fields: [issueId], references: [id], onDelete: SetNull)
+  approvedBy User?   @relation("specApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+}
+
+model Template {
+  id         String   @id @default(cuid())
+  kind       String // ISSUE | SPEC | WAVE
+  name       String
+  version    String
+  definition String // JSON: { sections: [...], fields: [...] }
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([kind, version])
+}
+
+model HarnessPack {
+  id          String   @id @default(cuid())
+  projectId   String? // null = org-level default pack, not tied to a project
+  name        String // miracle-standards
+  description String
+  createdAt   DateTime @default(now())
+
+  project  Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions HarnessVersion[]
+
+  @@unique([projectId, name])
+}
+
+model HarnessVersion {
+  id            String    @id @default(cuid())
+  packId        String
+  version       String // 0.1.0
+  status        String    @default("DRAFT") // DRAFT | PUBLISHED | DEPRECATED
+  notes         String?
+  checksum      String?
+  publishedAt   DateTime?
+  publishedById String?
+  createdAt     DateTime  @default(now())
+
+  pack        HarnessPack        @relation(fields: [packId], references: [id], onDelete: Cascade)
+  publishedBy User?              @relation("publisher", fields: [publishedById], references: [id], onDelete: SetNull)
+  components  HarnessComponent[]
+
+  @@unique([packId, version])
+}
+
+model HarnessComponent {
+  id        String @id @default(cuid())
+  versionId String
+  kind      String // SYSTEM_PROMPT | GUARDRAILS | MEMORY | TOOL_GUIDANCE | SUBAGENTS | SKILLS | SCRIPTS | PLUGINS
+  path      String // relative path inside the extracted pack
+  content   String
+  mode      String @default("644") // file mode applied on extraction, hooks need 755
+
+  version HarnessVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@unique([versionId, path])
+}
+
+model ApiToken {
+  id        String    @id @default(cuid())
+  name      String
+  userId    String
+  projectId String?
+  role      String // DEVELOPER | LEAD | ADMIN
+  prefix    String // stk_dev_ab12
+  tokenHash String    @unique
+  lastUsedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// Evidence ledger: every status change in the portal points at a row here.
+model Event {
+  id        String   @id @default(cuid())
+  projectId String
+  issueId   String?
+  kind      String // COMMIT | PR_OPENED | PR_MERGED | VALIDATED | CLAIMED | STATUS_REPORTED | HARNESS_INSTALLED | MODEL_CALL | TEMPLATE_REJECTED
+  actor     String
+  summary   String
+  payload   String? // JSON
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  issue   Issue?  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+}
+
+model Approval {
+  id          String   @id @default(cuid())
+  projectId   String
+  subjectType String // SPEC | WAVE | ISSUE | EXCEPTION
+  subjectId   String
+  approverId  String
+  decision    String // APPROVED | REJECTED
+  note        String?
+  createdAt   DateTime @default(now())
+
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  approver User    @relation(fields: [approverId], references: [id], onDelete: Cascade)
+}
+
+model ModelCall {
+  id        String   @id @default(cuid())
+  projectId String
+  issueId   String?
+  userId    String?
+  model     String
+  tokensIn  Int      @default(0)
+  tokensOut Int      @default(0)
+  costUsd   Float    @default(0)
+  allowed   Boolean  @default(true)
+  reason    String?
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  issue   Issue?  @relation(fields: [issueId], references: [id], onDelete: SetNull)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+}

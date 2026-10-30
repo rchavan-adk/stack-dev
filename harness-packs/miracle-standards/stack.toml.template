@@ -1,0 +1,27 @@
+# stack.toml — written by `stack harness install`, committed with the repo.
+# It travels with the code, so any developer or agent that clones gets the same harness.
+version = 1
+
+[project]
+key = "{{PROJECT_KEY}}"
+name = "{{PROJECT_NAME}}"
+portal_url = "{{PORTAL_URL}}"
+project = "{{PROJECT_KEY}}"
+
+[pack]
+name = "{{PACK_NAME}}"
+version = "{{PACK_VERSION}}"
+checksum = "{{PACK_CHECKSUM}}"
+
+[models]
+gateway = "{{GATEWAY_URL}}"
+default = "{{DEFAULT_MODEL}}"
+
+[mcp]
+url = "{{MCP_URL}}"
+
+[enforce]
+commit_item_pattern = "{{HANDLE_PATTERN}}"
+block_non_gateway_calls = true
+protected_branches = ["main", "master", "release"]
+require_verify_before_push = true

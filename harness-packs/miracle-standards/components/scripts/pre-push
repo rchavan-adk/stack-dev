@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Miracle standards blocker: no direct pushes to a protected branch, no force pushes.
+# The bare remote re-checks this, so stripping the hook only delays the rejection.
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+CONFIG="$REPO_ROOT/stack.toml"
+PROTECTED="main master release"
+
+if [ -f "$CONFIG" ]; then
+  FROM_CONFIG="$(grep -E '^[[:space:]]*protected_branches[[:space:]]*=' "$CONFIG" | head -1 | sed -E 's/.*=[[:space:]]*\[(.*)\].*/\1/' | tr -d '", ' | tr ',' ' ')"
+  [ -n "${FROM_CONFIG:-}" ] && PROTECTED="$FROM_CONFIG"
+fi
+
+while read -r _local_ref local_sha remote_ref _remote_sha; do
+  branch="${remote_ref#refs/heads/}"
+  for protected in $PROTECTED; do
+    if [ "$branch" = "$protected" ]; then
+      cat >&2 <<EOF
+
+  Push rejected by the Miracle harness.
+
+  '$branch' is protected. Open a pull request instead:
+      git switch -c stack/<handle>-<slug>
+      git push -u origin stack/<handle>-<slug>
+
+EOF
+      exit 1
+    fi
+  done
+
+  # Deleting a remote branch by pushing an empty sha is fine; rewriting is not.
+  if [ "$local_sha" != "0000000000000000000000000000000000000000" ]; then
+    if ! git merge-base --is-ancestor "$(git rev-parse "$remote_ref" 2>/dev/null || echo "$local_sha")" "$local_sha" 2>/dev/null; then
+      echo "  Warning: this push rewrites history on $branch. The remote will reject it." >&2
+    fi
+  fi
+done
+
+exit 0

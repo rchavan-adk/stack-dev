@@ -1,0 +1,24 @@
+node_modules/
+.next/
+dist/
+out/
+*.tsbuildinfo
+
+# local database and generated artefacts
+*.db
+*.db-journal
+packages/db/prisma/*.db
+.harness-cache/
+harness-dist/
+
+# mock github remote and developer workspace created by the demo
+mock-github/*.git/
+mock-github/workspace/
+
+# local credentials written by the stack CLI
+.stack/
+.env
+.env.local
+
+# os junk
+.DS_Store
