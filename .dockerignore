@@ -1,0 +1,30 @@
+# Keep the build context small and, more importantly, keep secrets and local
+# state out of image layers. Anything listed here never reaches a registry.
+node_modules
+**/node_modules
+
+.git
+.gitignore
+**/tsconfig.tsbuildinfo
+
+.next
+**/.next
+
+# Secrets. The container gets these from the environment at runtime (ECS task
+# definitions / docker compose), never from a file baked into the image.
+secrets
+**/.env
+**/.env.local
+**/.env.*.local
+stack-webhook-secret
+
+# Local-only state and tooling that the running services never touch.
+mock-github
+packages/db/prisma/*.db
+*.log
+.DS_Store
+
+# Infrastructure files are for the host, not the image.
+Dockerfile
+docker-compose.yml
+deploy

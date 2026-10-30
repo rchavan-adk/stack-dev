@@ -1,0 +1,104 @@
+# Local container run for the whole ecosystem.
+#
+# This exists to prove the image that ships to ECS actually works before it is
+# pushed: same image, same commands, same environment-variable contract. In AWS
+# the database is RDS and the entry point is an ALB; here it is a container and
+# published ports.
+#
+#   docker compose up -d db
+#   docker compose run --rm migrate          # apply schema
+#   docker compose run --rm seed             # optional demo data (dev only)
+#   docker compose up -d portal mcp gateway
+#
+# Postgres listens on 5433 locally so it cannot collide with a Homebrew Postgres
+# already running on 5432.
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql://stack:stack@db:5432/stack?schema=public
+  STACK_SIGNING_SECRET: ${STACK_SIGNING_SECRET:-local-compose-signing-secret}
+  STACK_PORTAL_URL: ${STACK_PORTAL_URL:-http://localhost:4200}
+  STACK_MCP_URL: ${STACK_MCP_URL:-http://localhost:4300/mcp}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: stack
+      POSTGRES_PASSWORD: stack
+      POSTGRES_DB: stack
+    ports:
+      - "5433:5432"
+    volumes:
+      - stack-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stack -d stack"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  # One-off tasks. `migrate` is what runs on every deployment; `seed` is for
+  # local demonstration data only and is never run against production.
+  migrate:
+    image: stack-app:local
+    build:
+      context: .
+    command: npx prisma migrate deploy --schema packages/db/prisma/schema.prisma
+    environment: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  seed:
+    image: stack-app:local
+    build:
+      context: .
+    command: npm -w @stack/db run seed
+    environment: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  portal:
+    image: stack-app:local
+    build:
+      context: .
+    command: npm -w @stack/portal run start
+    environment: *app-env
+    ports:
+      - "4200:4200"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  mcp:
+    image: stack-app:local
+    build:
+      context: .
+    command: npm -w @stack/mcp run start
+    environment:
+      <<: *app-env
+      STACK_MCP_PORT: "4300"
+    ports:
+      - "4300:4300"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  gateway:
+    image: stack-app:local
+    build:
+      context: .
+    command: npm -w @stack/gateway run start
+    environment:
+      <<: *app-env
+      STACK_GATEWAY_PORT: "4400"
+      STACK_GATEWAY_REQUIRE_ITEM: "true"
+    ports:
+      - "4400:4400"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  stack-pgdata:

@@ -7,6 +7,11 @@ export const metadata: Metadata = {
     "Stack AI is the system of record between the planner ecosystem and the developer ecosystem.",
 };
 
+// Every page is rendered per request. Two reasons: each one reads the session
+// cookie, so none of them can be shared between users; and a container build
+// must not need a database connection, which prerendering would require.
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-theme="miracle">
