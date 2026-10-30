@@ -4,11 +4,11 @@
  * Tokens are deterministic so the README and the demo script stay valid between
  * reseeds. That is a mock-only convenience; real tokens are random and shown once.
  */
-import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "@stack/core/src/password";
+import { DEFAULT_TEMPLATES, loadPackFromDisk, packChecksum } from "./defaults";
 
 const prisma = new PrismaClient();
 
@@ -16,11 +16,9 @@ const prisma = new PrismaClient();
 const DEV_PASSWORD = "stack-dev-password";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..", "..", "..");
-const PACK_DIR = join(REPO_ROOT, "harness-packs", "miracle-standards");
 const MOCK_GITHUB = join(REPO_ROOT, "mock-github");
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
-const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 
 const DEMO_TOKENS = {
   admin: "stk_adm_priya_demo_token_0001",
@@ -29,121 +27,6 @@ const DEMO_TOKENS = {
   dev2: "stk_dev_meera_demo_token_0001",
   dev3: "stk_dev_vikram_demo_token_0001",
   dev4: "stk_dev_sana_demo_token_0001",
-};
-
-interface PackManifest {
-  name: string;
-  version: string;
-  description: string;
-  components: Array<{ kind: string; path: string; mode: string }>;
-}
-
-function loadPackFromDisk(): {
-  manifest: PackManifest;
-  files: Array<{ kind: string; path: string; mode: string; content: string }>;
-} {
-  const manifestPath = join(PACK_DIR, "pack.json");
-  if (!existsSync(manifestPath)) {
-    throw new Error(`pack manifest not found at ${manifestPath}`);
-  }
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as PackManifest;
-  const files = manifest.components.map((component) => {
-    const absolute = join(PACK_DIR, component.path);
-    if (!existsSync(absolute)) {
-      throw new Error(`pack component missing on disk: ${component.path}`);
-    }
-    return { ...component, content: readFileSync(absolute, "utf8") };
-  });
-  // pack.json itself travels with the tarball so the CLI can read the manifest.
-  files.push({
-    kind: "SYSTEM_PROMPT",
-    path: "pack.json",
-    mode: "644",
-    content: readFileSync(manifestPath, "utf8"),
-  });
-  return { manifest, files };
-}
-
-const ISSUE_TEMPLATE = {
-  sections: [
-    { id: "context", title: "Context", required: true, minWords: 10, hint: "Why this work exists" },
-    { id: "scope", title: "Scope", required: true, hint: "Files, services or screens in scope" },
-    {
-      id: "acceptance",
-      title: "Acceptance criteria",
-      required: true,
-      hint: "Checklist a person can validate",
-    },
-    { id: "out-of-scope", title: "Out of scope", required: true, hint: "What this item does not cover" },
-    { id: "evidence", title: "Evidence", required: false, hint: "Commands, tests, screenshots" },
-  ],
-  fields: [
-    {
-      id: "type",
-      label: "Type",
-      type: "select",
-      required: true,
-      options: ["FEATURE", "BUG", "CHORE", "SPIKE"],
-    },
-    { id: "estimate", label: "Estimate (points)", type: "number", required: true },
-    { id: "wave", label: "Wave", type: "text", required: true },
-  ],
-  rules: {
-    minAcceptanceCriteria: 2,
-    requireLinkedSpec: false,
-    requireWave: true,
-    maxTitleLength: 100,
-  },
-};
-
-const SPEC_TEMPLATE = {
-  sections: [
-    { id: "problem", title: "Problem", required: true, minWords: 15 },
-    { id: "proposal", title: "Proposal", required: true, minWords: 20 },
-    { id: "api", title: "Interfaces", required: false },
-    { id: "risks", title: "Risks and rollback", required: true },
-    { id: "acceptance", title: "Acceptance criteria", required: true },
-  ],
-  fields: [
-    {
-      id: "author_role",
-      label: "Author role",
-      type: "select",
-      required: true,
-      options: ["LEAD", "ARCHITECT", "PLANNER_AGENT"],
-    },
-  ],
-  rules: {
-    minAcceptanceCriteria: 3,
-    requireLinkedSpec: false,
-    requireWave: false,
-    maxTitleLength: 120,
-  },
-};
-
-const WAVE_TEMPLATE = {
-  sections: [
-    { id: "goal", title: "Wave goal", required: true, minWords: 8 },
-    { id: "slices", title: "Horizontal slices", required: true },
-    { id: "exit", title: "Exit criteria", required: true },
-    { id: "dependencies", title: "Dependencies", required: false },
-  ],
-  fields: [
-    { id: "duration_weeks", label: "Duration (weeks)", type: "number", required: true },
-    {
-      id: "shape",
-      label: "Slicing shape",
-      type: "select",
-      required: true,
-      options: ["HORIZONTAL", "VERTICAL", "MIXED"],
-    },
-  ],
-  rules: {
-    minAcceptanceCriteria: 1,
-    requireLinkedSpec: false,
-    requireWave: false,
-    maxTitleLength: 80,
-  },
 };
 
 const issueBody = (context: string, scope: string, acceptance: string[], outOfScope: string) =>
@@ -567,29 +450,13 @@ async function main() {
   });
 
   await prisma.template.createMany({
-    data: [
-      {
-        kind: "ISSUE",
-        name: "Miracle issue template",
-        version: "1.2.0",
-        definition: JSON.stringify(ISSUE_TEMPLATE),
-        active: true,
-      },
-      {
-        kind: "SPEC",
-        name: "Miracle spec template",
-        version: "1.1.0",
-        definition: JSON.stringify(SPEC_TEMPLATE),
-        active: true,
-      },
-      {
-        kind: "WAVE",
-        name: "Miracle wave template",
-        version: "1.0.0",
-        definition: JSON.stringify(WAVE_TEMPLATE),
-        active: true,
-      },
-    ],
+    data: DEFAULT_TEMPLATES.map((template) => ({
+      kind: template.kind,
+      name: template.name,
+      version: template.version,
+      definition: JSON.stringify(template.definition),
+      active: true,
+    })),
   });
 
   // Harness pack, imported from the source of truth on disk.
@@ -602,12 +469,7 @@ async function main() {
     },
   });
 
-  const checksum = sha256(
-    files
-      .map((file) => `${file.path}:${sha256(file.content)}`)
-      .sort()
-      .join("\n"),
-  );
+  const checksum = packChecksum(files);
 
   const published = await prisma.harnessVersion.create({
     data: {
