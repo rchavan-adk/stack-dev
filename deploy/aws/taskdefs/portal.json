@@ -1,0 +1,71 @@
+{
+  "family": "stack-portal",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": {
+    "cpuArchitecture": "ARM64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "executionRoleArn": "__EXEC_ROLE__",
+  "taskRoleArn": "__TASK_ROLE__",
+  "containerDefinitions": [
+    {
+      "name": "portal",
+      "image": "__IMAGE_URI__:__IMAGE_TAG__",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 4200,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "STACK_PORTAL_URL",
+          "value": "__PUBLIC_URL__"
+        },
+        {
+          "name": "STACK_MCP_URL",
+          "value": "__PUBLIC_URL__/mcp"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "__PARAM_PREFIX__/DATABASE_URL"
+        },
+        {
+          "name": "STACK_SIGNING_SECRET",
+          "valueFrom": "__PARAM_PREFIX__/SIGNING_SECRET"
+        },
+        {
+          "name": "STACK_WEBHOOK_SECRET",
+          "valueFrom": "__PARAM_PREFIX__/WEBHOOK_SECRET"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "__LOG_GROUP__",
+          "awslogs-region": "__REGION__",
+          "awslogs-stream-prefix": "portal"
+        }
+      },
+      "command": [
+        "npm",
+        "-w",
+        "@stack/portal",
+        "run",
+        "start"
+      ]
+    }
+  ]
+}

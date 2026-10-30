@@ -1,0 +1,67 @@
+{
+  "family": "stack-mcp",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "runtimePlatform": {
+    "cpuArchitecture": "ARM64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "executionRoleArn": "__EXEC_ROLE__",
+  "taskRoleArn": "__TASK_ROLE__",
+  "containerDefinitions": [
+    {
+      "name": "mcp",
+      "image": "__IMAGE_URI__:__IMAGE_TAG__",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 4300,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "STACK_MCP_PORT",
+          "value": "4300"
+        },
+        {
+          "name": "STACK_PORTAL_URL",
+          "value": "__PUBLIC_URL__"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "__PARAM_PREFIX__/DATABASE_URL"
+        },
+        {
+          "name": "STACK_SIGNING_SECRET",
+          "valueFrom": "__PARAM_PREFIX__/SIGNING_SECRET"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "__LOG_GROUP__",
+          "awslogs-region": "__REGION__",
+          "awslogs-stream-prefix": "mcp"
+        }
+      },
+      "command": [
+        "npm",
+        "-w",
+        "@stack/mcp",
+        "run",
+        "start"
+      ]
+    }
+  ]
+}
