@@ -162,16 +162,17 @@ export default async function GetStartedPage() {
               <h2 className="card-title text-base">Install the Stack CLI</h2>
             </div>
             <p className="text-sm text-base-content/60">
-              The published package installs globally. In this mock it runs straight from the
-              workspace — no install needed, so alias it and the rest of this page works verbatim.
+              Installs globally from npm. From a local checkout of the portal&apos;s repository it
+              also runs straight from the workspace — no install needed, so alias it and the rest
+              of this page works verbatim.
             </p>
             <div className="flex items-start gap-2">
               <div className="mockup-code w-fit text-xs">
                 <pre data-prefix="$">
-                  <code>npm i -g @stack/cli</code>
+                  <code>npm i -g stack-ai</code>
                 </pre>
                 <pre data-prefix="#">
-                  <code>mock: run it from the workspace instead</code>
+                  <code>local checkout: run it from the workspace instead</code>
                 </pre>
                 <pre data-prefix="$">
                   <code>node {stackBin} --help</code>
