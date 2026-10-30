@@ -13,7 +13,7 @@ export interface ModelPrice {
 
 export const MODEL_ALLOWLIST: ModelPrice[] = [
   { model: "claude-sonnet-5", inPerMillion: 3, outPerMillion: 15 },
-  { model: "claude-haiku-4.5", inPerMillion: 0.8, outPerMillion: 4 },
+  { model: "claude-haiku-4.5", inPerMillion: 1, outPerMillion: 5 },
   { model: "gpt-5.2", inPerMillion: 2.5, outPerMillion: 10 },
   { model: "gpt-5.2-mini", inPerMillion: 0.4, outPerMillion: 1.6 },
 ];

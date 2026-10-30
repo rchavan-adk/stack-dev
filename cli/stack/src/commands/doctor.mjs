@@ -227,10 +227,12 @@ async function checkHooks(state) {
 async function checkMcp(ctx, state) {
   const base = { n: 6, label: "Stack MCP server reachable", required: true };
   const candidates = [];
-  const configured = state.link?.mcpUrl ?? (await ctx.soft(config.resolveMcpUrl(null, ctx.flags), null));
+  const portalUrl = await ctx.portal();
+  const configured = state.link?.mcpUrl ?? (await ctx.soft(config.resolveMcpUrl(portalUrl, null, ctx.flags), null));
   if (configured) {
-    const health = config.normalizeUrl(configured).replace(/\/mcp$/, "/health");
-    candidates.push(health);
+    // Both route shapes answer: /mcp/health behind a deployment's path
+    // routing, /health when the URL points at the server directly.
+    candidates.push(`${config.normalizeUrl(configured)}/health`);
   }
   candidates.push("http://localhost:4300/health");
 

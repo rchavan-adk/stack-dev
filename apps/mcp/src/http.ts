@@ -28,9 +28,14 @@ function jsonRpcError(res: Response, status: number, code: number, message: stri
 const app = express();
 app.use(express.json({ limit: "4mb" }));
 
-app.get("/health", (_req: Request, res: Response) => {
+const health = (_req: Request, res: Response): void => {
   res.json({ ok: true, tools: TOOL_COUNT, transport: "streamable-http" });
-});
+};
+// Direct, for the load balancer's own target health check.
+app.get("/health", health);
+// Public: a deployment fronts this service with /mcp path routing, so without
+// a route under /mcp the server has no health URL reachable through the CDN.
+app.get("/mcp/health", health);
 
 app.post("/mcp", async (req: Request, res: Response) => {
   const header = req.headers.authorization;

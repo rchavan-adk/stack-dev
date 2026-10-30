@@ -2,9 +2,10 @@
  * The proxy core: token auth → item attribution → engagement policy →
  * Anthropic → spend metering. This is the real counterpart of the portal's
  * policy endpoint (apps/portal/app/api/gateway/model-call): same allowlist,
- * same prices, same budget math, same evidence ledger — but the call is
- * actually forwarded to https://api.anthropic.com/v1/messages and metered
- * from real usage, not self-reported token counts.
+ * same prices, same budget math — but the call is actually forwarded to
+ * https://api.anthropic.com/v1/messages and metered from real usage, not
+ * self-reported token counts. Only this service writes allowed calls to the
+ * evidence ledger; the policy endpoint answers the question without metering.
  */
 // tsx loads @stack/core as CommonJS, so import concrete source files (like apps/mcp does).
 import { costOf, MODEL_ALLOWLIST, priceFor, providerFor } from "@stack/core/src/gateway";

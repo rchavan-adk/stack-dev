@@ -33,9 +33,7 @@ export async function linkProject(ctx, key, { root, detail = null } = {}) {
     packVersion: harness.version ?? null,
     checksum: harness.checksum ?? null,
     installedAt: null,
-    mcpUrl: config.normalizeUrl(
-      ctx.flags["mcp-url"] ?? project.mcpUrl ?? process.env.STACK_MCP_URL ?? config.DEFAULT_MCP_URL,
-    ),
+    mcpUrl: await config.resolveMcpUrl(portalUrl, project, ctx.flags),
     gatewayUrl: project.gatewayUrl
       ? config.normalizeUrl(project.gatewayUrl)
       : config.defaultGatewayUrl(portalUrl),

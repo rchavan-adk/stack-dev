@@ -87,28 +87,18 @@ export async function POST(request: Request) {
       );
     }
 
-    await prisma.modelCall.create({
-      data: {
-        projectId: project.id,
-        issueId: issue.id,
-        userId: ctx.user.id,
-        model: body.model,
-        tokensIn,
-        tokensOut,
-        costUsd: cost,
-        allowed: true,
-      },
-    });
-
-    const spendAfter = await projectSpend(project.id);
-    const remaining = Number((project.budgetUsd - spendAfter.usedUsd).toFixed(2));
+    // A policy ask is a question, not a call: nothing is metered here. Only
+    // the real gateway (apps/gateway) knows actual token counts, and only it
+    // writes allowed calls to the ledger. Denials are still recorded above,
+    // because a refusal is itself a decision worth auditing.
+    const remaining = Number((project.budgetUsd - spendBefore.usedUsd).toFixed(2));
 
     return Response.json({
       allowed: true,
       model: body.model,
       handle: issue.handle,
       costUsd: cost,
-      spend: { usedUsd: spendAfter.usedUsd, budgetUsd: project.budgetUsd, remainingUsd: remaining },
+      spend: { usedUsd: spendBefore.usedUsd, budgetUsd: project.budgetUsd, remainingUsd: remaining },
       warning: remaining < project.budgetUsd * 0.2 ? "under 20 percent of budget remaining" : null,
     });
   } catch (error) {

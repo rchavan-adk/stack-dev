@@ -104,8 +104,8 @@ export async function run(ctx) {
   );
   const mcpUrl = config.normalizeUrl(
     target.default
-      ? await config.resolveMcpUrl(null, ctx.flags)
-      : previous?.mcpUrl || (await config.resolveMcpUrl(null, ctx.flags)),
+      ? await config.resolveMcpUrl(portalUrl, null, ctx.flags)
+      : previous?.mcpUrl || (await config.resolveMcpUrl(portalUrl, null, ctx.flags)),
   );
   const defaultModel = await resolveDefaultModel(ctx);
 

@@ -2,9 +2,10 @@
 
 Port 4400. This is the real counterpart of the portal's policy endpoint
 (`apps/portal/app/api/gateway/model-call`): same allowlist, same prices, same
-budget math, same evidence ledger — but the request is actually forwarded to
-the Anthropic Messages API and metered from the response's real `usage`,
-not self-reported token counts.
+budget math — but the request is actually forwarded to the Anthropic Messages
+API and metered from the response's real `usage`, not self-reported token
+counts. Only this service writes allowed calls to the evidence ledger; the
+policy endpoint answers the question without metering.
 
 ```
 agent ──> POST :4400/v1/messages ──> policy checks ──> api.anthropic.com/v1/messages

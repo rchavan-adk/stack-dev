@@ -13,7 +13,6 @@ import { fileURLToPath } from "node:url";
 import { exists, readJson, remove, writeJson, writeJsonLine } from "./util.mjs";
 
 export const DEFAULT_PORTAL_URL = "http://localhost:4200";
-export const DEFAULT_MCP_URL = "http://localhost:4300/mcp";
 export const DEFAULT_HANDLE_PATTERN = "STACK-[0-9]+";
 export const DEFAULT_GATEWAY_PATH = "/api/gateway";
 export const DEFAULT_MODEL_FALLBACK = "gpt-4o-mini";
@@ -92,11 +91,15 @@ export async function resolvePortalUrl(flags = {}) {
   return DEFAULT_PORTAL_URL;
 }
 
-export async function resolveMcpUrl(projectConfig = null, flags = {}) {
+export async function resolveMcpUrl(portalUrl, projectConfig = null, flags = {}) {
   if (flags["mcp-url"]) return normalizeUrl(flags["mcp-url"]);
   if (process.env.STACK_MCP_URL) return normalizeUrl(process.env.STACK_MCP_URL);
   if (projectConfig?.mcpUrl) return normalizeUrl(projectConfig.mcpUrl);
-  return DEFAULT_MCP_URL;
+  // The MCP server rides the same origin as the portal, at /mcp behind a
+  // deployment's path routing. Deriving it from the portal URL — rather than
+  // defaulting to a developer's localhost — is what keeps a link made against
+  // a deployed portal usable on any machine.
+  return `${normalizeUrl(portalUrl)}/mcp`;
 }
 
 export function defaultGatewayUrl(portalUrl) {
