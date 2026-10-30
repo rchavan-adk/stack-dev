@@ -8,8 +8,12 @@ import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
+import { hashPassword } from "@stack/core/src/password";
 
 const prisma = new PrismaClient();
+
+/** Local-only. A deployment bootstraps its first admin at /setup instead. */
+const DEV_PASSWORD = "stack-dev-password";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..", "..", "..");
 const PACK_DIR = join(REPO_ROOT, "harness-packs", "miracle-standards");
@@ -239,6 +243,12 @@ async function main() {
       title: "Engineer",
     },
   });
+
+  // Seeded accounts get a real password hash, so local development exercises
+  // the same login path as a deployment instead of a persona shortcut. The
+  // login page shows these addresses outside production.
+  const devPasswordHash = await hashPassword(DEV_PASSWORD);
+  await prisma.user.updateMany({ data: { passwordHash: devPasswordHash } });
 
   const acme = await prisma.project.create({
     data: {

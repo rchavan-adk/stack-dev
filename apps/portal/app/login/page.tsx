@@ -12,13 +12,26 @@ const ROLE_BLURB: Record<string, string> = {
   CLIENT: "Read-only view of progress and the evidence behind every status.",
 };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   if (await getSessionUser()) redirect("/dashboard");
 
-  const users = await prisma.user.findMany({
-    orderBy: [{ role: "asc" }, { name: "asc" }],
-    include: { memberships: { include: { project: { select: { key: true } } } } },
-  });
+  // Nobody has an account yet: this deployment has never been set up.
+  const userCount = await prisma.user.count();
+  if (userCount === 0) redirect("/setup");
+
+  const { error } = await searchParams;
+  const devAccounts =
+    process.env.NODE_ENV === "production"
+      ? []
+      : await prisma.user.findMany({
+          where: { passwordHash: { not: null } },
+          orderBy: [{ role: "asc" }, { name: "asc" }],
+          select: { email: true, name: true, role: true },
+        });
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
@@ -60,7 +73,7 @@ export default async function LoginPage() {
         </div>
 
         <p className="text-xs text-white/60">
-          Mock environment · deterministic demo data · no client code stored
+          Evidence-backed delivery record · no client code stored
         </p>
       </section>
 
@@ -77,48 +90,42 @@ export default async function LoginPage() {
               <div>
                 <h2 className="card-title text-xl">Sign in</h2>
                 <p className="text-sm text-base-content/60">
-                  Mock login. Pick a seeded persona to see the portal through their eyes.
+                  Your Stack account. Agents and the CLI never use this form.
                 </p>
               </div>
 
-              <ul className="divide-y divide-base-300">
-                {users.map((user) => (
-                  <li key={user.id}>
-                    <form action="/api/auth/login" method="post">
-                      <input type="hidden" name="userId" value={user.id} />
-                      <button
-                        type="submit"
-                        className="group flex w-full items-center gap-3 px-1 py-3 text-left transition hover:bg-base-200"
-                      >
-                        <div className="avatar avatar-placeholder">
-                          <div className="h-10 w-10 rounded-full bg-secondary text-secondary-content">
-                            <span className="text-sm">
-                              {user.name
-                                .split(" ")
-                                .map((part) => part[0])
-                                .slice(0, 2)
-                                .join("")}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="truncate font-medium">{user.name}</span>
-                            <RoleBadge role={user.role} />
-                          </div>
-                          <p className="truncate text-xs text-base-content/60">
-                            {ROLE_BLURB[user.role] ?? user.email}
-                          </p>
-                        </div>
-                        <ArrowRight
-                          size={16}
-                          className="shrink-0 text-base-content/30 transition group-hover:translate-x-0.5 group-hover:text-primary"
-                        />
-                      </button>
-                    </form>
-                  </li>
-                ))}
-              </ul>
+              {error && (
+                <div className="alert alert-error text-sm">
+                  <span>That email and password did not match an account.</span>
+                </div>
+              )}
+
+              <form action="/api/auth/login" method="post" className="space-y-3">
+                <fieldset className="fieldset">
+                  <legend className="fieldset-legend text-xs">Email</legend>
+                  <input
+                    type="email"
+                    name="email"
+                    autoComplete="username"
+                    required
+                    placeholder="you@miraclesoft.com"
+                    className="input input-bordered w-full"
+                  />
+                </fieldset>
+                <fieldset className="fieldset">
+                  <legend className="fieldset-legend text-xs">Password</legend>
+                  <input
+                    type="password"
+                    name="password"
+                    autoComplete="current-password"
+                    required
+                    className="input input-bordered w-full"
+                  />
+                </fieldset>
+                <button type="submit" className="btn btn-primary w-full">
+                  Sign in <ArrowRight size={16} />
+                </button>
+              </form>
 
               <div className="alert alert-soft text-xs">
                 <span>
@@ -126,6 +133,26 @@ export default async function LoginPage() {
                   <span className="stack-mono">/settings/tokens</span>.
                 </span>
               </div>
+
+              {devAccounts.length > 0 && (
+                <div className="rounded-box border border-dashed border-base-300 p-3">
+                  <p className="text-xs font-medium">Development accounts</p>
+                  <p className="mt-1 text-xs text-base-content/60">
+                    Seeded locally with the password{" "}
+                    <span className="stack-mono">stack-dev-password</span>. This block never renders
+                    in production.
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {devAccounts.map((account) => (
+                      <li key={account.email} className="flex items-center gap-2 text-xs">
+                        <RoleBadge role={account.role} />
+                        <span className="stack-mono truncate">{account.email}</span>
+                        <span className="truncate text-base-content/50">{account.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </div>

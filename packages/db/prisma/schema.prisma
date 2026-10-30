@@ -17,15 +17,36 @@ model User {
   name      String
   role      String // ADMIN | LEAD | DEVELOPER | CLIENT
   title     String?
+  // scrypt hash. Null means the account cannot sign in yet: it was created by
+  // an admin and is waiting for the person to set a password.
+  passwordHash String?
   createdAt DateTime @default(now())
 
   memberships     Membership[]
   assignedIssues  Issue[]          @relation("assignee")
   tokens          ApiToken[]
+  sessions        Session[]
   approvals       Approval[]
   modelCalls      ModelCall[]
   publishedPacks  HarnessVersion[] @relation("publisher")
   approvedSpecs   Spec[]           @relation("specApprover")
+}
+
+// Browser sessions. The cookie carries a random token; only its sha256 lands
+// here, so the row cannot be replayed, and deleting it revokes the session.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  userAgent String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Project {
