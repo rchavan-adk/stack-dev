@@ -87,9 +87,20 @@ while read -r old new ref; do
     continue
   fi
 
+  # Sign the delivery when a secret is available, the same way GitHub does.
+  # The portal verifies per repository and refuses unsigned deliveries in
+  # production, so an unsigned push only works on a local dev portal.
+  SECRET="${STACK_WEBHOOK_SECRET:-$(cat "$GIT_DIR_PATH/stack-webhook-secret" 2>/dev/null || true)}"
+  SIG_HEADER=()
+  if [ -n "$SECRET" ] && command -v openssl >/dev/null 2>&1; then
+    SIG="$(printf '%s' "$PAYLOAD" | openssl dgst -sha256 -hmac "$SECRET" 2>/dev/null | awk '{print $NF}')"
+    [ -n "$SIG" ] && SIG_HEADER=(-H "X-Hub-Signature-256: sha256=$SIG")
+  fi
+
   RESPONSE="$(curl -fsS --max-time 4 \
     -X POST \
     -H 'Content-Type: application/json' \
+    ${SIG_HEADER[@]+"${SIG_HEADER[@]}"} \
     -d "$PAYLOAD" \
     "$PORTAL_URL/api/git/events" 2>/dev/null)" || RESPONSE=""
 

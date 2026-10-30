@@ -20,5 +20,8 @@ mock-github/workspace/
 .env
 .env.local
 
+# per-repo webhook secret a local hook reads before signing a delivery
+stack-webhook-secret
+
 # os junk
 .DS_Store

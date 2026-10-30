@@ -147,11 +147,69 @@ export async function approveIssue(formData: FormData) {
   if (!result.ok) throw new Error(result.reason ?? "Could not approve this item.");
 
   if (assigneeId) {
+    // An item can only be owned by someone on the engagement.
+    const membership = await prisma.membership.findFirst({
+      where: { projectId: result.issue!.projectId, userId: assigneeId },
+    });
+    if (!membership) throw new Error("That person is not a member of this project.");
     await prisma.issue.update({
       where: { handle: handle.toUpperCase() },
       data: { assigneeId },
     });
   }
+
+  revalidatePath(`/projects/${projectKey}/issues/${handle}`);
+  revalidatePath(`/projects/${projectKey}/issues`);
+}
+
+/**
+ * Ownership can change after approval: people leave, waves get rebalanced.
+ * The assignee was only settable in the approve form, which meant a wrong
+ * owner was permanent. The change is evidence like any other.
+ */
+export async function assignIssue(formData: FormData) {
+  const user = await requireSessionUser();
+  if (!canAdminister(user.role)) throw new Error("Only a lead or admin can reassign an item.");
+
+  const handle = String(formData.get("handle") ?? "").toUpperCase();
+  const projectKey = String(formData.get("projectKey") ?? "");
+  const assigneeId = String(formData.get("assigneeId") ?? "");
+
+  const issue = await prisma.issue.findUnique({
+    where: { handle },
+    include: { assignee: { select: { name: true } } },
+  });
+  if (!issue) throw new Error(`Unknown item ${handle}.`);
+
+  let assignee: { id: string; name: string } | null = null;
+  if (assigneeId) {
+    const membership = await prisma.membership.findFirst({
+      where: { projectId: issue.projectId, userId: assigneeId },
+      include: { user: { select: { id: true, name: true } } },
+    });
+    if (!membership) {
+      throw new Error("That person is not a member of this project.");
+    }
+    assignee = membership.user;
+  }
+
+  if ((issue.assigneeId ?? "") === assigneeId) return;
+
+  await prisma.issue.update({
+    where: { id: issue.id },
+    data: { assigneeId: assignee?.id ?? null },
+  });
+
+  const was = issue.assignee?.name ?? "nobody";
+  await prisma.event.create({
+    data: {
+      projectId: issue.projectId,
+      issueId: issue.id,
+      kind: "STATUS_REPORTED",
+      actor: user.name,
+      summary: `${issue.handle} reassigned from ${was} to ${assignee?.name ?? "nobody"}`,
+    },
+  });
 
   revalidatePath(`/projects/${projectKey}/issues/${handle}`);
   revalidatePath(`/projects/${projectKey}/issues`);

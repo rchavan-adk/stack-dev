@@ -66,8 +66,11 @@ HTTP behavior:
 
 - `POST /mcp` — Streamable HTTP, stateless (`sessionIdGenerator: undefined`),
   one fresh server per request. `GET`/`DELETE /mcp` answer with the documented
-  `405` JSON-RPC error. A client can send `initialize` and a call in one
-  batched POST, or a bare `tools/list` — both work.
+  `405` JSON-RPC error. Send one JSON-RPC message per POST: a bare
+  `tools/list` or `tools/call` works without a handshake, because the server
+  is stateless. Batching `initialize` together with a call in a single POST is
+  rejected ("Only one initialization request is allowed") — the transport
+  treats the batch as a second initialization.
 - Missing/unknown token → HTTP `401` with a JSON-RPC error body.
 - `GET /health` (no auth) → `{ "ok": true, "tools": 17, "transport": "streamable-http" }`.
 - One stderr line per tool call: `timestamp [token-prefix] tool outcome` where

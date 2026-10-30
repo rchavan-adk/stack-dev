@@ -4,6 +4,7 @@ import { ISSUE_STATUS_LABELS, type IssueStatus } from "@stack/core";
 import { CircleDollarSign, Package, Users } from "lucide-react";
 import { EventKindBadge, IssueStatusBadge, RoleBadge, WaveStatusBadge } from "@/components/status";
 import { projectByKey, projectSpend, publishedPack, recentEvents, statusCounts } from "@/lib/queries";
+import { formatUsd } from "@/lib/format";
 import { prisma } from "@stack/db";
 
 export default async function ProjectOverviewPage({
@@ -53,7 +54,7 @@ export default async function ProjectOverviewPage({
               <h3 className="text-sm font-semibold">Model spend</h3>
               <CircleDollarSign size={16} className="text-accent" />
             </div>
-            <div className="text-2xl font-semibold">${spend.usedUsd.toFixed(2)}</div>
+            <div className="text-2xl font-semibold">${formatUsd(spend.usedUsd)}</div>
             <progress
               className={`progress w-full ${remaining < project.budgetUsd * 0.2 ? "progress-warning" : "progress-accent"}`}
               value={spend.usedUsd}

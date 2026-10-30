@@ -2,11 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@stack/db";
 import { ISSUE_TRANSITIONS, type IssueStatus } from "@stack/core";
-import { CheckCircle2, GitPullRequest, Undo2 } from "lucide-react";
+import { CheckCircle2, GitPullRequest, Undo2, UserRoundCog } from "lucide-react";
 import { EventKindBadge, IssueStatusBadge, IssueTypeBadge } from "@/components/status";
 import { canAdminister, requireSessionUser } from "@/lib/session";
 import { parseAcceptance } from "@/lib/queries";
-import { approveIssue, sendBackIssue, validateIssue } from "../../../actions";
+import { formatUsd } from "@/lib/format";
+import { approveIssue, assignIssue, sendBackIssue, validateIssue } from "../../../actions";
 
 export default async function IssueDetailPage({
   params,
@@ -30,9 +31,11 @@ export default async function IssueDetailPage({
   if (!issue || issue.project.key !== key.toUpperCase()) notFound();
 
   const acceptance = parseAcceptance(issue.acceptance);
+  // Anyone who can hold work on this engagement. Clients observe, they do not own items.
   const members = await prisma.membership.findMany({
-    where: { projectId: issue.projectId, role: "DEVELOPER" },
+    where: { projectId: issue.projectId, role: { not: "CLIENT" } },
     include: { user: { select: { id: true, name: true } } },
+    orderBy: { user: { name: "asc" } },
   });
   const spend = issue.modelCalls
     .filter((call) => call.allowed)
@@ -219,6 +222,34 @@ export default async function IssueDetailPage({
               </p>
             )}
 
+            {admin && issue.status !== "BACKLOG" && issue.status !== "DONE" && (
+              <form action={assignIssue} className="space-y-2">
+                <input type="hidden" name="handle" value={issue.handle} />
+                <input type="hidden" name="projectKey" value={issue.project.key} />
+                <fieldset className="fieldset">
+                  <legend className="fieldset-legend text-xs">Owner</legend>
+                  <select
+                    name="assigneeId"
+                    defaultValue={issue.assigneeId ?? ""}
+                    className="select select-bordered select-sm w-full"
+                  >
+                    <option value="">unassigned</option>
+                    {members.map((membership) => (
+                      <option key={membership.user.id} value={membership.user.id}>
+                        {membership.user.name} ({membership.role.toLowerCase()})
+                      </option>
+                    ))}
+                  </select>
+                </fieldset>
+                <button type="submit" className="btn btn-outline btn-sm w-full">
+                  <UserRoundCog size={16} /> Update owner
+                </button>
+                <p className="text-xs text-base-content/50">
+                  Reassignment is recorded as evidence, like every other change.
+                </p>
+              </form>
+            )}
+
             <div className="divider my-1 text-xs">machine transitions</div>
             <p className="text-xs text-base-content/60">
               From <span className="stack-mono">{issue.status}</span> a token may move this to{" "}
@@ -235,7 +266,7 @@ export default async function IssueDetailPage({
         <section className="card border border-base-300 bg-base-100 shadow-sm">
           <div className="card-body gap-2">
             <h2 className="card-title text-base">Cost of this item</h2>
-            <div className="text-2xl font-semibold">${spend.toFixed(2)}</div>
+            <div className="text-2xl font-semibold">${formatUsd(spend)}</div>
             <p className="text-xs text-base-content/60">
               {issue.modelCalls.length} gateway call{issue.modelCalls.length === 1 ? "" : "s"} tagged{" "}
               <span className="stack-mono">{issue.handle}</span>
@@ -245,7 +276,7 @@ export default async function IssueDetailPage({
                 <li key={call.id} className="flex items-center justify-between gap-2">
                   <span className="stack-mono truncate">{call.model}</span>
                   <span className={call.allowed ? "" : "text-error"}>
-                    {call.allowed ? `$${call.costUsd.toFixed(2)}` : "denied"}
+                    {call.allowed ? `$${formatUsd(call.costUsd)}` : "denied"}
                   </span>
                 </li>
               ))}

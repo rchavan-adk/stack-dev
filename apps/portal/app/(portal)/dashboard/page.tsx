@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowUpRight, CircleDollarSign, GitPullRequest, Package 
 import { EventKindBadge, IssueStatusBadge, IssueTypeBadge, WaveStatusBadge } from "@/components/status";
 import { requireSessionUser } from "@/lib/session";
 import { projectSpend, statusCounts } from "@/lib/queries";
+import { formatUsd } from "@/lib/format";
 
 export default async function DashboardPage() {
   const user = await requireSessionUser();
@@ -93,7 +94,7 @@ export default async function DashboardPage() {
               <CircleDollarSign size={22} />
             </div>
             <div className="stat-title">Model spend</div>
-            <div className="stat-value text-accent">${spend.usedUsd.toFixed(2)}</div>
+            <div className="stat-value text-accent">${formatUsd(spend.usedUsd)}</div>
             <div className="stat-desc">
               of ${primary.budgetUsd.toFixed(0)} · {spend.denied} call
               {spend.denied === 1 ? "" : "s"} denied

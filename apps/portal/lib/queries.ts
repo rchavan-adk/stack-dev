@@ -56,7 +56,9 @@ export async function projectSpend(projectId: string) {
     prisma.modelCall.count({ where: { projectId, allowed: false } }),
   ]);
   return {
-    usedUsd: Number((allowed._sum.costUsd ?? 0).toFixed(2)),
+    // Six decimals, matching the ledger: rounding the total to cents here threw
+    // away every sub-cent call before any screen or budget check saw it.
+    usedUsd: Number((allowed._sum.costUsd ?? 0).toFixed(6)),
     tokensIn: allowed._sum.tokensIn ?? 0,
     tokensOut: allowed._sum.tokensOut ?? 0,
     calls: allowed._count._all,

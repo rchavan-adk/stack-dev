@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@stack/db";
 import { EventKindBadge } from "@/components/status";
 import { projectSpend } from "@/lib/queries";
+import { formatUsd } from "@/lib/format";
 
 export default async function ProjectEvidencePage({
   params,
@@ -52,7 +53,7 @@ export default async function ProjectEvidencePage({
         </div>
         <div className="stat">
           <div className="stat-title">Gateway spend</div>
-          <div className="stat-value">${spend.usedUsd.toFixed(2)}</div>
+          <div className="stat-value">${formatUsd(spend.usedUsd)}</div>
           <div className="stat-desc">
             {spend.calls} allowed · {spend.denied} denied
           </div>
@@ -163,7 +164,7 @@ export default async function ProjectEvidencePage({
                     <td className="text-xs">
                       {call.tokensIn}/{call.tokensOut}
                     </td>
-                    <td className="text-xs">${call.costUsd.toFixed(2)}</td>
+                    <td className="text-xs">${formatUsd(call.costUsd)}</td>
                     <td>
                       {call.allowed ? (
                         <span className="badge badge-xs badge-success">allowed</span>
