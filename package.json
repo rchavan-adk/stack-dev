@@ -17,6 +17,7 @@
     "dev": "npm run dev:portal",
     "dev:portal": "npm -w @stack/portal run dev",
     "dev:mcp": "npm -w @stack/mcp run dev",
+    "dev:gateway": "npm -w @stack/gateway run dev",
     "build": "npm -w @stack/portal run build",
     "typecheck": "npm -ws --if-present run typecheck",
     "install:cli": "npm install -g ./cli/stack",

@@ -1,0 +1,23 @@
+{
+  "name": "@stack/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Real model gateway for Stack engagements: proxies Anthropic with token auth, item attribution, allowlist, budget and a spend ledger.",
+  "scripts": {
+    "dev": "tsx watch src/http.ts",
+    "start": "tsx src/http.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@stack/core": "*",
+    "@stack/db": "*",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

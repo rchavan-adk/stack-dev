@@ -248,7 +248,7 @@ async function main() {
       summary:
         "Replace the legacy checkout service with a modular order pipeline, fixed bid, three waves.",
       handlePattern: "STACK-[0-9]+",
-      gatewayUrl: "http://localhost:4200/api/gateway",
+      gatewayUrl: "http://localhost:4400",
       budgetUsd: 500,
     },
   });
@@ -260,7 +260,7 @@ async function main() {
       client: "Miracle Software Systems",
       summary: "Internal pilot that proves the harness and the portal before client rollout.",
       handlePattern: "STACK-[0-9]+",
-      gatewayUrl: "http://localhost:4200/api/gateway",
+      gatewayUrl: "http://localhost:4400",
       budgetUsd: 150,
     },
   });
