@@ -36,12 +36,22 @@ export async function run(ctx) {
   state.link = state.root ? await config.readProjectConfig(state.root) : null;
   state.toml = state.root ? await readStackToml(state.root) : null;
   // A repo that runs the default harness has no project to ask about, so compare
-  // against the org-level pack the portal publishes instead.
-  state.published = !state.api
-    ? null
-    : state.link?.projectKey
-      ? await ctx.soft(state.api.harnessCurrent(state.link.projectKey), null)
-      : await ctx.soft(state.api.harnessDefault(), null);
+  // against the org-level pack the portal publishes instead. The same is true of
+  // a linked project that has published nothing yet — the installer falls back
+  // to the default pack, so the check compares against what is actually
+  // installed rather than reporting "portal unreachable" for a plain 404.
+  state.projectPackMissing = false;
+  if (!state.api) {
+    state.published = null;
+  } else if (state.link?.projectKey) {
+    state.published = await ctx.soft(state.api.harnessCurrent(state.link.projectKey), null);
+    if (!state.published) {
+      state.projectPackMissing = true;
+      state.published = await ctx.soft(state.api.harnessDefault(), null);
+    }
+  } else {
+    state.published = await ctx.soft(state.api.harnessDefault(), null);
+  }
 
   checks.push(await checkCredentials(ctx, state));
   checks.push(await checkLink(state));
@@ -173,7 +183,13 @@ async function checkStackToml(state) {
       fix: "stack harness install --force",
     };
   }
-  return { ...base, ok: true, detail: `stack.toml v${state.toml.packVersion} \u00b7 portal v${publishedVersion}` };
+  return {
+    ...base,
+    ok: true,
+    detail: `stack.toml v${state.toml.packVersion} \u00b7 portal v${publishedVersion}${
+      state.projectPackMissing ? ` (default pack; ${state.link?.projectKey} has none published)` : ""
+    }`,
+  };
 }
 
 async function checkPack(state) {
