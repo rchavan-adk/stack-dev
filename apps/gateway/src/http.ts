@@ -36,7 +36,9 @@ function errorPayload(type: string, message: string) {
 
 const port = gatewayPort();
 const server = app.listen(port, () => {
-  console.log(`stack-gateway listening on http://localhost:${port}`);
+  // The port it bound, not a URL anyone else can use: in a deployment this is
+  // the container's own interface behind the load balancer.
+  console.log(`stack-gateway listening on port ${port}`);
   console.log("  POST /v1/messages  (Anthropic Messages proxy, Stack token auth)");
   console.log("  GET  /health");
   if (!process.env.ANTHROPIC_API_KEY) {

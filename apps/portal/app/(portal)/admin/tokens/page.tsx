@@ -1,4 +1,5 @@
 import { Ban, KeyRound } from "lucide-react";
+import { mcpEndpointUrl, portalBaseUrl } from "@/lib/urls";
 import { prisma } from "@stack/db";
 import { canAdminister, requireSessionUser } from "@/lib/session";
 import { AdminDenied } from "@/components/admin-gate";
@@ -31,8 +32,8 @@ export default async function AdminTokensPage() {
   ]);
 
   const active = tokens.filter((token) => !token.revokedAt).length;
-  const portalUrl = process.env.STACK_PORTAL_URL ?? "http://localhost:4200";
-  const mcpUrl = process.env.STACK_MCP_URL ?? "http://localhost:4300/mcp";
+  const portalUrl = portalBaseUrl();
+  const mcpUrl = mcpEndpointUrl();
 
   return (
     <div className="space-y-6">

@@ -14,6 +14,7 @@ import {
 import { prisma } from "@stack/db";
 import { requireSessionUser } from "@/lib/session";
 import { publishedPack } from "@/lib/queries";
+import { mcpEndpointUrl, portalBaseUrl } from "@/lib/urls";
 import { CopyButton } from "@/components/copy-button";
 
 /** The portal runs from apps/portal, so the workspace root is two levels up. */
@@ -61,8 +62,8 @@ export default async function GetStartedPage() {
   const stackBin = join(workspaceRoot, "cli", "stack", "bin", "stack.mjs");
   const mcpStdio = join(workspaceRoot, "apps", "mcp", "src", "stdio.ts");
 
-  const portalUrl = process.env.STACK_PORTAL_URL ?? "http://localhost:4200";
-  const mcpUrl = process.env.STACK_MCP_URL ?? "http://localhost:4300/mcp";
+  const portalUrl = portalBaseUrl();
+  const mcpUrl = mcpEndpointUrl();
 
   const memberships = await prisma.membership.findMany({
     where: { userId: user.id },

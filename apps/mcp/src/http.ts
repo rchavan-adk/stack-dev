@@ -72,7 +72,9 @@ app.get("/mcp", methodNotAllowed);
 app.delete("/mcp", methodNotAllowed);
 
 const httpServer = app.listen(PORT, () => {
-  logHttp(`stack-mcp listening on http://localhost:${PORT}/mcp (${TOOL_COUNT} tools, stateless streamable-http)`);
+  // The port it bound, not a URL anyone else can use: in a deployment this is
+  // the container's own interface behind the load balancer.
+  logHttp(`stack-mcp listening on port ${PORT} (${TOOL_COUNT} tools, stateless streamable-http at /mcp)`);
 });
 
 process.on("SIGINT", () => {

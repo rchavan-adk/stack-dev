@@ -8,6 +8,7 @@ import { canAdminister, requireSessionUser } from "@/lib/session";
 import { transitionIssue } from "@/lib/issues";
 import { generateWebhookSecret } from "@/lib/github";
 import { isGithubRepoUrl, normaliseBaseUrl } from "@/lib/github-url";
+import { gatewayBaseUrl } from "@/lib/urls";
 
 const registerProjectSchema = z.object({
   key: z.string().min(1, "Project key is required."),
@@ -95,7 +96,7 @@ export async function registerProject(formData: FormData) {
       client: input.client,
       summary: input.summary || `${input.name} for ${input.client}.`,
       handlePattern,
-      gatewayUrl: input.gatewayUrl || "http://localhost:4200/api/gateway",
+      gatewayUrl: input.gatewayUrl || gatewayBaseUrl(),
       budgetUsd,
       webhookBaseUrl,
       memberships: { create: { userId: user.id, role: user.role === "ADMIN" ? "ADMIN" : "LEAD" } },

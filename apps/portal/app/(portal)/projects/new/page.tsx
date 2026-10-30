@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { canAdminister, requireSessionUser } from "@/lib/session";
 import { RepoSourceFields } from "@/components/repo-source-fields";
+import { gatewayBaseUrl } from "@/lib/urls";
 import { registerProject } from "../actions";
 
 export default async function NewProjectPage({
@@ -115,7 +116,7 @@ export default async function NewProjectPage({
               <legend className="fieldset-legend">Gateway URL</legend>
               <input
                 name="gatewayUrl"
-                defaultValue="http://localhost:4200/api/gateway"
+                defaultValue={gatewayBaseUrl()}
                 className="input input-bordered w-full stack-mono text-sm"
               />
             </fieldset>

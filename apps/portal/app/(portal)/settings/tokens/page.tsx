@@ -3,6 +3,7 @@ import { Ban, EyeOff, KeyRound, Terminal } from "lucide-react";
 import { prisma } from "@stack/db";
 import { isReadOnly, requireSessionUser } from "@/lib/session";
 import { RoleBadge } from "@/components/status";
+import { mcpEndpointUrl, portalBaseUrl } from "@/lib/urls";
 import { CreateTokenForm } from "@/components/create-token-form";
 import { TokenUsage } from "@/components/token-usage";
 import { CopyButton } from "@/components/copy-button";
@@ -30,8 +31,8 @@ export default async function MyTokensPage() {
 
   const projects = user.role === "ADMIN" ? allProjects : memberships.map((m) => m.project);
   const readOnly = isReadOnly(user.role);
-  const portalUrl = process.env.STACK_PORTAL_URL ?? "http://localhost:4200";
-  const mcpUrl = process.env.STACK_MCP_URL ?? "http://localhost:4300/mcp";
+  const portalUrl = portalBaseUrl();
+  const mcpUrl = mcpEndpointUrl();
   const loginCommand = "stack login --token stk_dev_…";
 
   const allowedRoles =

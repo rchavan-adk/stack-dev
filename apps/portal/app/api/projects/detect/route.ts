@@ -1,7 +1,8 @@
 import { prisma } from "@stack/db";
 import { authenticate, jsonError } from "@/lib/api-auth";
+import { portalBaseUrl } from "@/lib/urls";
 
-const portalUrl = () => process.env.STACK_PORTAL_URL ?? "http://localhost:4200";
+const portalUrl = () => portalBaseUrl();
 
 /** Normalise any git remote form to "owner/repo". */
 function normaliseRepo(value: string): string {

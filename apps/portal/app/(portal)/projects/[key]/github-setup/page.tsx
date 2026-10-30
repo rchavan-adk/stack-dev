@@ -4,6 +4,7 @@ import { prisma } from "@stack/db";
 import { AlertTriangle, CheckCircle2, Github, KeyRound, Plug, Radio, Save, Wand2 } from "lucide-react";
 import { canAdminister, requireSessionUser } from "@/lib/session";
 import { AdminDenied } from "@/components/admin-gate";
+import { isLocalDeployment, portalBaseUrl } from "@/lib/urls";
 import { CopyButton } from "@/components/copy-button";
 import {
   buildAppManifest,
@@ -136,17 +137,32 @@ export default async function GithubSetupPage({
             <div className="alert alert-warning items-start text-left">
               <Radio className="mt-0.5 shrink-0" size={18} />
               <div className="space-y-2">
-                <h2 className="font-semibold">Start your tunnel first</h2>
+                <h2 className="font-semibold">
+                  {isLocalDeployment() ? "Start your tunnel first" : "Set the public base URL"}
+                </h2>
                 <p className="text-sm">
-                  GitHub cannot reach <span className="stack-mono">localhost:4200</span>. Expose the
-                  portal with a tunnel, then set the public base URL on the project before creating
-                  the app — the manifest, the webhook URL and the setup link are all built from it.
+                  {isLocalDeployment() ? (
+                    <>
+                      GitHub cannot reach <span className="stack-mono">{portalBaseUrl()}</span>.
+                      Expose the portal with a tunnel, then set the public base URL on the project
+                      before creating the app.
+                    </>
+                  ) : (
+                    <>
+                      GitHub has to reach this portal over the public internet. Set the public base
+                      URL on the project to <span className="stack-mono">{portalBaseUrl()}</span>{" "}
+                      before creating the app.
+                    </>
+                  )}{" "}
+                  The manifest, the webhook URL and the setup link are all built from it.
                 </p>
-                <div className="mockup-code text-xs">
-                  <pre data-prefix="$">
-                    <code>ngrok http 4200</code>
-                  </pre>
-                </div>
+                {isLocalDeployment() && (
+                  <div className="mockup-code text-xs">
+                    <pre data-prefix="$">
+                      <code>ngrok http 4200</code>
+                    </pre>
+                  </div>
+                )}
                 <Link
                   href={`/admin/settings?project=${project.key}`}
                   className="btn btn-primary btn-xs"

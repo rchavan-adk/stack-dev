@@ -1,4 +1,5 @@
 import { AlertTriangle, GitBranch, Globe, Plug, Save, UserPlus, Users, X } from "lucide-react";
+import { isLocalDeployment, portalBaseUrl } from "@/lib/urls";
 import { prisma } from "@stack/db";
 import { canAdminister, requireSessionUser } from "@/lib/session";
 import { MEMBERSHIP_ROLE_LABELS, MEMBERSHIP_ROLES } from "@/lib/members";
@@ -491,11 +492,23 @@ export default async function AdminSettingsPage({
 
           <div className="alert alert-soft text-xs">
             <span>
-              The portal must be reachable from GitHub. It runs on{" "}
-              <code className="stack-mono">localhost:4200</code> here, so expose it through a tunnel
-              (cloudflared, ngrok or an SSH reverse tunnel) and set the public URL as the{" "}
-              <code className="stack-mono">STACK_PORTAL_URL</code> repository secret, next to{" "}
-              <code className="stack-mono">STACK_WEBHOOK_SECRET</code>, in the client repository.
+              The portal must be reachable from GitHub.{" "}
+              {isLocalDeployment() ? (
+                <>
+                  It runs on <code className="stack-mono">{portalBaseUrl()}</code> here, so expose it
+                  through a tunnel (cloudflared, ngrok or an SSH reverse tunnel) and set the public
+                  URL as the <code className="stack-mono">STACK_PORTAL_URL</code> repository secret,
+                  next to <code className="stack-mono">STACK_WEBHOOK_SECRET</code>, in the client
+                  repository.
+                </>
+              ) : (
+                <>
+                  It is reachable at <code className="stack-mono">{portalBaseUrl()}</code>, so set
+                  that URL as the <code className="stack-mono">STACK_PORTAL_URL</code> repository
+                  secret, next to <code className="stack-mono">STACK_WEBHOOK_SECRET</code>, in the
+                  client repository. No tunnel is needed.
+                </>
+              )}
             </span>
           </div>
         </div>
