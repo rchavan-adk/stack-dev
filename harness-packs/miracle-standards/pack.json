@@ -1,7 +1,7 @@
 {
   "name": "miracle-standards",
-  "version": "0.1.0",
-  "description": "The Miracle way of working, compiled into the eight harness components. Guiders shape the agent, blockers run as code.",
+  "version": "0.2.0",
+  "description": "The Miracle way of working, compiled into the seven harness components. Guiders shape the agent, blockers run as code.",
   "components": [
     { "kind": "SYSTEM_PROMPT", "path": "components/system-prompt.md", "mode": "644" },
     { "kind": "GUARDRAILS", "path": "components/guardrails.md", "mode": "644" },
@@ -12,7 +12,6 @@
     { "kind": "SCRIPTS", "path": "components/scripts/commit-msg", "mode": "755" },
     { "kind": "SCRIPTS", "path": "components/scripts/pre-push", "mode": "755" },
     { "kind": "SCRIPTS", "path": "components/scripts/install-hooks.sh", "mode": "755" },
-    { "kind": "PLUGINS", "path": "components/plugins/gateway-only.js", "mode": "644" },
     { "kind": "SCRIPTS", "path": "ci/stack-verify.sh", "mode": "755" },
     { "kind": "SYSTEM_PROMPT", "path": "agents/AGENTS.md", "mode": "644" },
     { "kind": "SYSTEM_PROMPT", "path": "stack.toml.template", "mode": "644" }

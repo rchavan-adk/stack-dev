@@ -5,8 +5,7 @@ templates every issue must match, the approvals only humans can give, and the ev
 behind every status change — while never seeing a line of client code. Planners run
 waves through the portal, developers pull assigned work into their own IDE through the
 `stack` CLI and the MCP server, and git events (pushes, merges) — not claims — move the
-cards. The model gateway is the only route to a model, so every token spent is priced
-against the engagement budget and attributed to an item.
+cards.
 
 ## Quick start
 
@@ -59,18 +58,18 @@ replayed end-to-end against the mock stack; the outputs below are what it produc
    the database; the session cookie takes you to that persona's dashboard.
 2. **Akash (lead) → terminal, in a clone of the repo** —
    `stack login --token stk_lead_akash_demo_token_001`, then `stack project detect`
-   (matches **ACME**), `stack harness install` (miracle-standards 0.1.0, hooks armed),
+   (matches **ACME**), `stack harness install` (miracle-standards 0.2.0, hooks armed),
    `stack mcp install --agent opencode` (writes `opencode.json`), `stack doctor`
-   (7/8 green — nothing claimed yet).
-3. **Akash → `/admin/harness`** — publish the updated pack: clone the 0.2.0 draft to a
+   (6/7 green — nothing claimed yet).
+3. **Akash → `/admin/harness`** — publish the updated pack: clone the 0.3.0 draft to a
    new draft, publish. `GET /api/projects/ACME/harness/current` then returns
-   **0.2.0 PUBLISHED** with a freshly stamped checksum.
+   **0.3.0 PUBLISHED** with a freshly stamped checksum.
 4. **Sana (cold developer) → terminal** — `stack login --token stk_dev_sana_demo_token_0001`
    (zero projects, hint to install the default harness), `stack harness install`
-   (miracle-default 0.1.0), `stack doctor` — all green.
+   (miracle-default 0.2.0), `stack doctor` — all green.
 5. **Akash → `/admin/settings`** — add Sana to ACME as DEVELOPER. **Sana → terminal** —
    `stack project link ACME`, `stack harness install` (pack switch: miracle-default
-   0.1.0 → **miracle-standards 0.2.0**), `stack harness status` shows 0.2.0, doctor green.
+   0.2.0 → **miracle-standards 0.3.0**), `stack harness status` shows 0.3.0, doctor green.
 6. **Akash → MCP (JSON-RPC over HTTP)** — `stack_template_get` for the ISSUE kind
    (sections context/scope/acceptance/out-of-scope, fields type/estimate/wave, ≥2
    acceptance criteria), then `stack_issue_create` — expect a new **BACKLOG** item with
@@ -79,10 +78,7 @@ replayed end-to-end against the mock stack; the outputs below are what it produc
    Sana's token shows **APPROVED**, assignee Sana Kulkarni.
 8. **Sana → terminal, in her clone** — `stack issues --mine` (the item is there),
    `stack claim <HANDLE>` (**IN_PROGRESS**), then the commit-hook story: a handleless
-   commit is **rejected by the commit-msg hook**; `STACK-<n>: …` passes. Model calls:
-   `stack model-call --model gpt-5.2-mini --item <HANDLE> --tokens-in 1000 --tokens-out 200`
-   → **ALLOWED** (priced against budget); `--model gpt-4o` → **DENIED**, "not on the
-   engagement allowlist", exit 1.
+   commit is **rejected by the commit-msg hook**; `STACK-<n>: …` passes.
 9. **Sana → git** — push branch `stack/<HANDLE>-demo`: the mock remote's post-receive
    moves the card to **IN_REVIEW**; merge it (`bash mock-github/merge.sh stack/<HANDLE>-demo`)
    → **AWAITING_VALIDATION**.
@@ -144,15 +140,12 @@ mock-github/acme-checkout.git   (bare repo, stands in for github.com)
   merge.sh            → the "Merge pull request" button
 
 cli/stack            stack — login, project detect/link, harness install/status,
-                     mcp install, issues/claim, model-call, doctor, verify
+                     mcp install, issues/claim, doctor, verify
 apps/portal          Next.js 15 (port 4200) — dashboards, admin, waves, issues,
-                     harness packs, GitHub App wizard, policy endpoint,
-                     git event + webhook receivers
+                     harness packs, GitHub App wizard, git event + webhook receivers
 apps/mcp             MCP server (port 4300) — 17 tools over streamable HTTP,
                      token-scoped (whoami, issues, waves, templates, harness, specs)
-apps/gateway         the model gateway (port 4400) — forwards to Anthropic and
-                     meters real usage per item against the engagement budget
-packages/core        shared domain: statuses, transitions, templates, tokens, prices
+packages/core        shared domain: statuses, transitions, templates, tokens
 packages/db          Prisma schema + seed (PostgreSQL) — the system of record
 harness-packs/       miracle-standards source pack (guiders + blockers)
 deploy/              AWS deployment (ECS Fargate + ALB + CloudFront + RDS),
@@ -165,11 +158,10 @@ deploy/              AWS deployment (ECS Fargate + ALB + CloudFront + RDS),
 |---|---|
 | Git evidence: pushes, merges, hook rejections, the evidence ledger | The GitHub side: a local bare repo, not github.com (until the App is installed) |
 | Local hooks (commit-msg, pre-push) and remote enforcement (pre-receive) | Login personas and demo tokens: deterministic seed data, hidden in production |
-| The model gateway (`apps/gateway`): real Anthropic calls, metered per item against budget | The portal's policy endpoint: answers "is this allowed" without calling or metering |
-| Template enforcement, approvals, wave planning, MCP tool surface and role scoping | Demo spend rows from the seed, for the walkthrough |
+| Template enforcement, approvals, wave planning, MCP tool surface and role scoping | — |
 
 ### Enforcement, in one line each
 
 - **Local hooks teach** — the commit-msg hook explains the handle rule and fixes the message shape.
 - **The server decides** — status moves on git evidence (push → IN_REVIEW, merge → AWAITING_VALIDATION), never on a claim; `--no-verify` changes nothing because the remote runs the same checks.
-- **Humans own the two human-only transitions** — BACKLOG → APPROVED and AWAITING_VALIDATION → DONE are person-only; the MCP refuses them, the gateway refuses off-allowlist models, and validation is the only route to Done.
+- **Humans own the two human-only transitions** — BACKLOG → APPROVED and AWAITING_VALIDATION → DONE are person-only; the MCP refuses them, and validation is the only route to Done.

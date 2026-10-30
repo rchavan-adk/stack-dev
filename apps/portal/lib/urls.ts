@@ -29,19 +29,6 @@ export function mcpEndpointUrl(): string {
 }
 
 /**
- * The model gateway's base URL.
- *
- * This is a base, not the messages endpoint: the project's gateway URL is what
- * the harness plugin prefix-matches and what an agent SDK is pointed at, and the
- * SDK appends `/v1/messages` itself. In a deployment the gateway shares the
- * portal's origin; in development it is its own port.
- */
-export function gatewayBaseUrl(): string {
-  const configured = process.env.STACK_GATEWAY_URL;
-  return configured ? trimTrailingSlash(configured) : "http://localhost:4400";
-}
-
-/**
  * An absolute URL for a path on this portal.
  *
  * `fallbackOrigin` is the origin of the incoming request. It is consulted only

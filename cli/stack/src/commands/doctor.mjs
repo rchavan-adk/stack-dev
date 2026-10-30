@@ -15,7 +15,7 @@ import { readStackToml } from "../stacktoml.mjs";
 
 export const meta = {
   name: "doctor",
-  summary: "Check credentials, link, pack, hooks, MCP and gateway",
+  summary: "Check credentials, link, pack, hooks and MCP",
   usage: "stack doctor [--json]",
   detail: "Exits 1 when a required check fails; every failure prints the command that fixes it.",
 };
@@ -59,7 +59,6 @@ export async function run(ctx) {
   checks.push(await checkPack(state));
   checks.push(await checkHooks(state));
   checks.push(await checkMcp(ctx, state));
-  checks.push(await checkGateway(ctx, state));
   checks.push(await checkClaimedItem(ctx, state));
 
   const failed = checks.filter((check) => !check.ok && check.required !== false);
@@ -273,27 +272,8 @@ async function checkMcp(ctx, state) {
   };
 }
 
-async function checkGateway(ctx, state) {
-  const base = { n: 7, label: "model gateway reachable", required: true };
-  if (!state.api) {
-    return { ...base, ok: false, detail: "cannot call the portal without credentials", fix: "stack login" };
-  }
-  try {
-    const health = await state.api.gatewayHealth();
-    const allowlist = Array.isArray(health?.allowlist) ? health.allowlist : [];
-    state.allowlist = allowlist;
-    return {
-      ...base,
-      ok: true,
-      detail: `${health?.gateway ?? "gateway"} \u00b7 ${allowlist.length} model(s) allowlisted`,
-    };
-  } catch (error) {
-    return { ...base, ok: false, detail: error.message, fix: error.fix || "npm run dev:portal" };
-  }
-}
-
 async function checkClaimedItem(ctx, state) {
-  const base = { n: 8, label: "an item is claimed in this session", required: true };
+  const base = { n: 7, label: "an item is claimed in this session", required: true };
   if (!state.root) return { ...base, ok: false, detail: "no repository", fix: "stack claim STACK-101" };
   const session = await config.readSession(state.root);
   if (!session?.handle) {

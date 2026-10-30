@@ -52,12 +52,11 @@ export const EVENT_KINDS = [
   "CLAIMED",
   "STATUS_REPORTED",
   "HARNESS_INSTALLED",
-  "MODEL_CALL",
   "TEMPLATE_REJECTED",
 ] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 
-/** The eight Harness components, and where each one lands inside an extracted pack. */
+/** The seven Harness components, and where each one lands inside an extracted pack. */
 export const HARNESS_COMPONENTS = [
   {
     kind: "SYSTEM_PROMPT",
@@ -94,13 +93,6 @@ export const HARNESS_COMPONENTS = [
     label: "Scripts",
     path: "components/scripts/commit-msg",
     role: "Tool interface",
-    blocking: true,
-  },
-  {
-    kind: "PLUGINS",
-    label: "Plugins",
-    path: "components/plugins/gateway-only.js",
-    role: "Middleware",
     blocking: true,
   },
 ] as const;

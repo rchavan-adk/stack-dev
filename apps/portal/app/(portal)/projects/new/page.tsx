@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { canAdminister, requireSessionUser } from "@/lib/session";
 import { RepoSourceFields } from "@/components/repo-source-fields";
-import { gatewayBaseUrl } from "@/lib/urls";
 import { registerProject } from "../actions";
 
 export default async function NewProjectPage({
@@ -101,37 +100,19 @@ export default async function NewProjectPage({
             defaultBranch="main"
           />
 
-          <div className="divider my-0 text-xs">Enforcement and cost</div>
+          <div className="divider my-0 text-xs">Enforcement</div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Item handle pattern</legend>
-              <input
-                name="handlePattern"
-                defaultValue="STACK-[0-9]+"
-                className="input input-bordered w-full stack-mono"
-              />
-            </fieldset>
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Gateway URL</legend>
-              <input
-                name="gatewayUrl"
-                defaultValue={gatewayBaseUrl()}
-                className="input input-bordered w-full stack-mono text-sm"
-              />
-            </fieldset>
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Budget (USD)</legend>
-              <input
-                name="budgetUsd"
-                type="number"
-                min={0}
-                step={10}
-                defaultValue={250}
-                className="input input-bordered w-full"
-              />
-            </fieldset>
-          </div>
+          <fieldset className="fieldset">
+            <legend className="fieldset-legend">Item handle pattern</legend>
+            <input
+              name="handlePattern"
+              defaultValue="STACK-[0-9]+"
+              className="input input-bordered w-full stack-mono"
+            />
+            <p className="label text-xs">
+              Commits whose message carries no handle matching this pattern are rejected
+            </p>
+          </fieldset>
 
           <div className="card-actions justify-end">
             <Link href="/projects" className="btn btn-ghost btn-sm">

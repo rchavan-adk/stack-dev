@@ -2,8 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@stack/db";
 import { EventKindBadge } from "@/components/status";
-import { projectSpend } from "@/lib/queries";
-import { formatUsd } from "@/lib/format";
 
 export default async function ProjectEvidencePage({
   params,
@@ -18,7 +16,7 @@ export default async function ProjectEvidencePage({
   const project = await prisma.project.findUnique({ where: { key: key.toUpperCase() } });
   if (!project) notFound();
 
-  const [events, kinds, spend, calls] = await Promise.all([
+  const [events, kinds] = await Promise.all([
     prisma.event.findMany({
       where: { projectId: project.id, ...(kind ? { kind } : {}) },
       orderBy: { createdAt: "desc" },
@@ -29,13 +27,6 @@ export default async function ProjectEvidencePage({
       by: ["kind"],
       where: { projectId: project.id },
       _count: { _all: true },
-    }),
-    projectSpend(project.id),
-    prisma.modelCall.findMany({
-      where: { projectId: project.id },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      include: { issue: { select: { handle: true } }, user: { select: { name: true } } },
     }),
   ]);
 
@@ -50,22 +41,6 @@ export default async function ProjectEvidencePage({
             {kinds.reduce((sum, row) => sum + row._count._all, 0)}
           </div>
           <div className="stat-desc">the portal keeps metadata, never code</div>
-        </div>
-        <div className="stat">
-          <div className="stat-title">Gateway spend</div>
-          <div className="stat-value">${formatUsd(spend.usedUsd)}</div>
-          <div className="stat-desc">
-            {spend.calls} allowed · {spend.denied} denied
-          </div>
-        </div>
-        <div className="stat">
-          <div className="stat-title">Tokens</div>
-          <div className="stat-value text-accent">
-            {((spend.tokensIn + spend.tokensOut) / 1000).toFixed(0)}k
-          </div>
-          <div className="stat-desc">
-            {(spend.tokensIn / 1000).toFixed(0)}k in · {(spend.tokensOut / 1000).toFixed(0)}k out
-          </div>
         </div>
       </div>
 
@@ -133,54 +108,6 @@ export default async function ProjectEvidencePage({
         </div>
       </div>
 
-      <div className="card border border-base-300 bg-base-100 shadow-sm">
-        <div className="card-body">
-          <h2 className="card-title text-base">Gateway log</h2>
-          <p className="text-xs text-base-content/60">
-            Every call carries an item handle, which is what makes cost per item possible.
-          </p>
-          <div className="overflow-x-auto">
-            <table className="table table-sm">
-              <thead>
-                <tr>
-                  <th>When</th>
-                  <th>Model</th>
-                  <th>Item</th>
-                  <th>Who</th>
-                  <th>Tokens</th>
-                  <th>Cost</th>
-                  <th>Result</th>
-                </tr>
-              </thead>
-              <tbody>
-                {calls.map((call) => (
-                  <tr key={call.id}>
-                    <td className="whitespace-nowrap text-xs text-base-content/60">
-                      {call.createdAt.toISOString().slice(0, 16).replace("T", " ")}
-                    </td>
-                    <td className="stack-mono text-xs">{call.model}</td>
-                    <td className="stack-mono text-xs">{call.issue?.handle ?? "—"}</td>
-                    <td className="text-xs">{call.user?.name ?? "—"}</td>
-                    <td className="text-xs">
-                      {call.tokensIn}/{call.tokensOut}
-                    </td>
-                    <td className="text-xs">${formatUsd(call.costUsd)}</td>
-                    <td>
-                      {call.allowed ? (
-                        <span className="badge badge-xs badge-success">allowed</span>
-                      ) : (
-                        <span className="badge badge-xs badge-error" title={call.reason ?? ""}>
-                          denied
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

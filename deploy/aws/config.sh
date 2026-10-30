@@ -35,7 +35,6 @@ export TASK_ROLE="${PREFIX}EcsTaskRole"
 export ALB_NAME="${PREFIX}-alb"
 export TG_PORTAL="${PREFIX}-portal-tg"
 export TG_MCP="${PREFIX}-mcp-tg"
-export TG_GATEWAY="${PREFIX}-gateway-tg"
 export SG_ALB_NAME="${PREFIX}-alb-sg"
 export SG_TASK_NAME="${PREFIX}-task-sg"
 export SG_DB_NAME="${PREFIX}-db-sg"
@@ -56,19 +55,18 @@ export SSM_PREFIX="/${PREFIX}"
 
 # --- task sizing --------------------------------------------------------------
 # Graviton in us-east-2: $0.03238 per vCPU-hour, $0.00356 per GB-hour. Portal
-# gets more room because Next.js serves HTML and holds a session; the two API
-# services are thin.
+# gets more room because Next.js serves HTML and holds a session; the MCP
+# service is thin.
 export PORTAL_CPU=512   PORTAL_MEM=1024
 export MCP_CPU=256      MCP_MEM=512
-export GATEWAY_CPU=256  GATEWAY_MEM=512
 
 # --- helpers ------------------------------------------------------------------
 say()  { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 note() { printf '    %s\n' "$*"; }
 
 # Resolve the default VPC and its subnets. The account has no custom networking,
-# and default subnets are public, which is what the tasks need to reach the
-# Anthropic API without a NAT gateway.
+# and default subnets are public, which keeps image pulls and outbound calls
+# simple without a NAT gateway.
 export VPC_ID="$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true \
   --query 'Vpcs[0].VpcId' --output text)"
 export SUBNET_IDS_LIST="$(aws ec2 describe-subnets \

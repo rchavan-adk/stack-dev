@@ -43,7 +43,6 @@ const DOCTOR_CHECKS = [
   { label: ".stack/pack checksum matches", detail: "the extracted pack is byte-identical to what was published", fix: "stack harness install --force" },
   { label: "git hooks installed and executable", detail: "commit-msg and pre-push present with mode 755", fix: "stack harness install --force" },
   { label: "Stack MCP server reachable", detail: "the MCP health endpoint answers", fix: "npm run dev:mcp" },
-  { label: "model gateway reachable", detail: "the portal gateway answers with its model allowlist", fix: "npm run dev:portal" },
   { label: "an item is claimed in this session", detail: ".stack/session.json holds a handle", fix: "stack claim STACK-101" },
 ];
 
@@ -306,7 +305,7 @@ export default async function GetStartedPage() {
                 </div>
                 <p className="text-base-content/70">
                   The repo matched a project. Pick the project by number and the CLI writes{" "}
-                  <code className="stack-mono">.stack/project.json</code> — portal, gateway and
+                  <code className="stack-mono">.stack/project.json</code> — portal and
                   MCP URLs included.
                 </p>
               </div>
@@ -466,13 +465,6 @@ export default async function GetStartedPage() {
                   A commit whose message carries no handle matching the project pattern is rejected
                   locally by <code className="stack-mono">commit-msg</code> — and rejected again
                   server-side when the event arrives.
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="badge badge-primary badge-sm mt-0.5 shrink-0">models</span>
-                <span>
-                  Model calls must go through the project gateway. The pack&apos;s plugin blocks
-                  direct provider calls, and the portal&apos;s allowlist decides what passes.
                 </span>
               </li>
               <li className="flex gap-3">

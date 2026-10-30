@@ -64,11 +64,8 @@ export class Api {
 
   errorFor(response, body, url) {
     const message = extractMessage(body) || `${response.status} ${response.statusText}`;
-    // A gateway denial (allowlist, budget) is a policy answer, not an auth problem,
-    // so the "stack login" hint would be misleading for it.
-    const gatewayDenied = Boolean(body && typeof body === "object" && body.allowed === false);
     const fix =
-      response.status === 401 || (response.status === 403 && !gatewayDenied)
+      response.status === 401 || response.status === 403
         ? "stack login   # your token is missing, expired or not allowed here"
         : "";
     return new ApiError(`${response.status} from ${url.replace(this.portalUrl, "")}: ${message}`, {
@@ -174,18 +171,6 @@ export class Api {
   /** POST /api/harness/installed { project, version, repo } -> { ok } */
   harnessInstalled({ project, version, repo }) {
     return this.request("POST", "/api/harness/installed", { body: { project, version, repo } });
-  }
-
-  /** POST /api/gateway/model-call -> { allowed, reason?, spend } */
-  modelCall({ project, handle, model, tokensIn, tokensOut }) {
-    const body = { project, model, tokensIn, tokensOut };
-    if (handle) body.handle = handle;
-    return this.request("POST", "/api/gateway/model-call", { body });
-  }
-
-  /** GET /api/gateway/health -> { ok, gateway, allowlist } */
-  gatewayHealth() {
-    return this.request("GET", "/api/gateway/health", { timeoutMs: 4000 });
   }
 }
 

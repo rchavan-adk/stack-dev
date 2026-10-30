@@ -40,7 +40,7 @@ if ! printf '%s' "$MSG" | grep -qE "$PATTERN"; then
       STACK-123: $(printf '%s' "$MSG" | head -1)
 
   Open items:  stack issues --mine
-  Why:         the item handle joins commits, spend and status in the portal.
+  Why:         the item handle joins commits and status in the portal.
 
 EOF
   exit 1

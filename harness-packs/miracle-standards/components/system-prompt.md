@@ -8,9 +8,8 @@ to an item in the Stack AI portal, and the portal is the system of record.
 1. Work only on the item you have claimed. Its handle looks like `STACK-123`.
 2. Every commit message starts with the item handle, for example
    `STACK-123: add tax rounding to order total`.
-3. All model calls go through the engagement's LiteLLM gateway. Never use a raw provider key.
-4. You may propose. A person decides. Never mark work done, approve a spec, or close an item.
-5. Acceptance criteria in the item are the definition of correct. Read them before you start
+3. You may propose. A person decides. Never mark work done, approve a spec, or close an item.
+4. Acceptance criteria in the item are the definition of correct. Read them before you start
    and check each one before you open a pull request.
 
 ## How to start

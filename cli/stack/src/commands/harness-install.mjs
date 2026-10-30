@@ -97,17 +97,12 @@ export async function run(ctx) {
     : config.handlePatternFor(projectDetail) ||
       previous?.handlePattern ||
       config.DEFAULT_HANDLE_PATTERN;
-  const gatewayUrl = config.normalizeUrl(
-    target.default
-      ? config.defaultGatewayUrl(portalUrl)
-      : projectDetail.gatewayUrl || previous?.gatewayUrl || config.defaultGatewayUrl(portalUrl),
-  );
+  // resolveMcpUrl's precedence is flag > env > previously saved > derived, which
+  // is exactly what a reinstall wants: an explicit --mcp-url beats the stale
+  // value a past link wrote.
   const mcpUrl = config.normalizeUrl(
-    target.default
-      ? await config.resolveMcpUrl(portalUrl, null, ctx.flags)
-      : previous?.mcpUrl || (await config.resolveMcpUrl(portalUrl, null, ctx.flags)),
+    await config.resolveMcpUrl(portalUrl, target.default ? null : previous, ctx.flags),
   );
-  const defaultModel = await resolveDefaultModel(ctx);
 
   const values = {
     PROJECT_KEY: target.default ? config.DEFAULT_HARNESS_PROJECT_KEY : target.key,
@@ -118,8 +113,6 @@ export async function run(ctx) {
     PACK_NAME: pack.name ?? previous?.packName ?? "miracle-standards",
     PACK_VERSION: pack.version ?? "",
     PACK_CHECKSUM: pack.checksum ?? "",
-    GATEWAY_URL: gatewayUrl,
-    DEFAULT_MODEL: defaultModel,
     MCP_URL: mcpUrl,
     HANDLE_PATTERN: handlePattern,
   };
@@ -178,7 +171,6 @@ export async function run(ctx) {
     checksum: values.PACK_CHECKSUM,
     installedAt,
     mcpUrl,
-    gatewayUrl,
     handlePattern,
     portalUrl,
     repo: path.basename(root),
@@ -232,7 +224,6 @@ export async function run(ctx) {
         ["pack", `${values.PACK_NAME} v${values.PACK_VERSION}`],
         ["checksum", `${values.PACK_CHECKSUM || "none"} ${ui.muted(`(tarball sha256 ${tarballSha256.slice(0, 12)}\u2026)`)}`],
         ["pack dir", `.stack/pack (${entries.length} files, digest ${digest.slice(0, 12)}\u2026)`],
-        ["default model", values.DEFAULT_MODEL],
       ]);
 
       ui.section("Checksum");
@@ -366,15 +357,6 @@ async function verifyChecksum(packDir, expected) {
   const wanted = String(expected ?? "");
   if (!wanted) return { checked: false, matches: false, expected: "", actual };
   return { checked: true, matches: wanted === actual, expected: wanted, actual };
-}
-
-/** Prefer the gateway's first allowlisted model so stack.toml points somewhere real. */
-async function resolveDefaultModel(ctx) {
-  if (process.env.STACK_DEFAULT_MODEL) return process.env.STACK_DEFAULT_MODEL;
-  const api = await ctx.api();
-  const health = await ctx.soft(api.gatewayHealth(), null);
-  const allowlist = Array.isArray(health?.allowlist) ? health.allowlist.filter(Boolean) : [];
-  return allowlist[0] ?? config.DEFAULT_MODEL_FALLBACK;
 }
 
 function render(template, values) {

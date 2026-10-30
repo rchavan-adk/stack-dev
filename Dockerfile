@@ -2,8 +2,8 @@
 #
 # One image, several entry points.
 #
-# The portal, the MCP server, the model gateway and the schema migration all
-# share the same workspace packages (@stack/core, @stack/db) and the same
+# The portal, the MCP server and the schema migration all share the same
+# workspace packages (@stack/core, @stack/db) and the same
 # generated Prisma client. Building three images would triple the build time and
 # let the services drift onto different versions of the shared code. Instead a
 # single image is built once and each ECS task definition overrides the command.
@@ -30,7 +30,6 @@ COPY packages/core/package.json  ./packages/core/
 COPY packages/db/package.json    ./packages/db/
 COPY apps/portal/package.json    ./apps/portal/
 COPY apps/mcp/package.json       ./apps/mcp/
-COPY apps/gateway/package.json   ./apps/gateway/
 COPY cli/stack/package.json      ./cli/stack/
 # Dev dependencies are installed deliberately: next build, tsx and prisma are all
 # needed to produce and run this image.
@@ -52,8 +51,8 @@ RUN npm -w @stack/portal run build
 # ---------------------------------------------------------------------------
 FROM build AS app
 ENV NODE_ENV=production
-# 4200 portal, 4300 mcp, 4400 gateway. One image exposes all three; the task
-# definition decides which one actually answers.
-EXPOSE 4200 4300 4400
-# Default to the portal; the MCP and gateway task definitions override this.
+# 4200 portal, 4300 mcp. One image exposes both; the task definition decides
+# which one actually answers.
+EXPOSE 4200 4300
+# Default to the portal; the MCP task definition overrides this.
 CMD ["npm", "-w", "@stack/portal", "run", "start"]

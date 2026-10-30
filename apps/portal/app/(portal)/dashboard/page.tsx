@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@stack/db";
 import { ISSUE_STATUS_LABELS, type IssueStatus } from "@stack/core";
-import { AlertTriangle, ArrowUpRight, CircleDollarSign, GitPullRequest, Package } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, GitPullRequest, Package } from "lucide-react";
 import { EventKindBadge, IssueStatusBadge, IssueTypeBadge, WaveStatusBadge } from "@/components/status";
 import { requireSessionUser } from "@/lib/session";
-import { projectSpend, statusCounts } from "@/lib/queries";
-import { formatUsd } from "@/lib/format";
+import { statusCounts } from "@/lib/queries";
 
 export default async function DashboardPage() {
   const user = await requireSessionUser();
@@ -20,9 +19,7 @@ export default async function DashboardPage() {
       : memberships.map((membership) => membership.project);
 
   const primary = projects[0];
-  const [counts, spend] = primary
-    ? await Promise.all([statusCounts(primary.id), projectSpend(primary.id)])
-    : [null, null];
+  const counts = primary ? await statusCounts(primary.id) : null;
 
   const assigned = await prisma.issue.findMany({
     where: { assigneeId: user.id, status: { not: "DONE" } },
@@ -62,7 +59,7 @@ export default async function DashboardPage() {
         </Link>
       </header>
 
-      {primary && counts && spend && (
+      {primary && counts && (
         <section className="stats stats-vertical w-full border border-base-300 bg-base-100 shadow-sm sm:stats-horizontal">
           <div className="stat">
             <div className="stat-title">Open items</div>
@@ -88,17 +85,6 @@ export default async function DashboardPage() {
             <div className="stat-title">Awaiting validation</div>
             <div className="stat-value text-warning">{counts.AWAITING_VALIDATION}</div>
             <div className="stat-desc">merged, needs a person</div>
-          </div>
-          <div className="stat">
-            <div className="stat-figure text-accent">
-              <CircleDollarSign size={22} />
-            </div>
-            <div className="stat-title">Model spend</div>
-            <div className="stat-value text-accent">${formatUsd(spend.usedUsd)}</div>
-            <div className="stat-desc">
-              of ${primary.budgetUsd.toFixed(0)} · {spend.denied} call
-              {spend.denied === 1 ? "" : "s"} denied
-            </div>
           </div>
         </section>
       )}

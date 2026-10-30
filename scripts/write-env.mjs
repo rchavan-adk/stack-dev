@@ -40,16 +40,6 @@ const targets = [
       `STACK_MCP_PORT="4300"`,
     ],
   },
-  {
-    // The gateway reads ANTHROPIC_API_KEY from the gitignored secrets/.env at
-    // the repo root (see src/env.ts); this file carries only its own settings.
-    file: join(root, "apps", "gateway", ".env"),
-    body: [
-      `DATABASE_URL="${databaseUrl}"`,
-      `STACK_GATEWAY_PORT="4400"`,
-      `STACK_GATEWAY_REQUIRE_ITEM="true"`,
-    ],
-  },
 ];
 
 for (const target of targets) {

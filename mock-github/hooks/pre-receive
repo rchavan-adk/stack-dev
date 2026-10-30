@@ -33,7 +33,7 @@ reject_no_handle() {
       STACK-123: $subject
 
   Open items:  stack issues --mine
-  Why:         the item handle joins commits, spend and status in the portal.
+  Why:         the item handle joins commits and status in the portal.
 
 EOF
 }

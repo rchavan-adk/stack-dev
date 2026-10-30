@@ -135,20 +135,12 @@ const COMMANDS = [
     file: "doctor.mjs",
     group: "Harness",
     flags: {},
-    summary: "Check credentials, link, pack, hooks, MCP and gateway",
+    summary: "Check credentials, link, pack, hooks and MCP",
     usage: "stack doctor [--json]",
-  },
-  {
-    name: "model-call",
-    file: "model-call.mjs",
-    group: "Gateway",
-    flags: { model: "value", item: "value", "tokens-in": "value", "tokens-out": "value" },
-    summary: "Ask the gateway whether a model call is allowed",
-    usage: "stack model-call --model M [--item HANDLE] [--tokens-in N] [--tokens-out N]",
   },
 ];
 
-const GROUPS = ["Get started", "Daily work", "Harness", "Gateway"];
+const GROUPS = ["Get started", "Daily work", "Harness"];
 
 const PREFIXES = {
   project: ["project detect", "project list", "link"],

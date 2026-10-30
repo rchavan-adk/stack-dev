@@ -131,7 +131,6 @@ export async function run(ctx) {
         ["repo", repoName],
         ["remote", remote || "(no origin remote)"],
         ["portal", portalUrl],
-        ["gateway", record.gatewayUrl],
         ["mcp", record.mcpUrl],
         [
           "harness",

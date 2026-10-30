@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ISSUE_STATUS_LABELS, type IssueStatus } from "@stack/core";
-import { CircleDollarSign, Package, Users } from "lucide-react";
+import { Package, Users } from "lucide-react";
 import { EventKindBadge, IssueStatusBadge, RoleBadge, WaveStatusBadge } from "@/components/status";
-import { projectByKey, projectSpend, publishedPack, recentEvents, statusCounts } from "@/lib/queries";
-import { formatUsd } from "@/lib/format";
+import { projectByKey, publishedPack, recentEvents, statusCounts } from "@/lib/queries";
 import { prisma } from "@stack/db";
 
 export default async function ProjectOverviewPage({
@@ -16,9 +15,8 @@ export default async function ProjectOverviewPage({
   const project = await projectByKey(key);
   if (!project) notFound();
 
-  const [counts, spend, pack, events, awaiting] = await Promise.all([
+  const [counts, pack, events, awaiting] = await Promise.all([
     statusCounts(project.id),
-    projectSpend(project.id),
     publishedPack(project.id),
     recentEvents(project.id, 12),
     prisma.issue.findMany({
@@ -30,11 +28,10 @@ export default async function ProjectOverviewPage({
   const open = (Object.keys(counts) as IssueStatus[])
     .filter((status) => status !== "DONE")
     .reduce((sum, status) => sum + counts[status], 0);
-  const remaining = Number((project.budgetUsd - spend.usedUsd).toFixed(2));
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 lg:grid-cols-4">
+      <section className="grid gap-4 lg:grid-cols-3">
         <div className="stats border border-base-300 bg-base-100 shadow-sm lg:col-span-2">
           <div className="stat">
             <div className="stat-title">Open items</div>
@@ -45,25 +42,6 @@ export default async function ProjectOverviewPage({
             <div className="stat-title">Awaiting validation</div>
             <div className="stat-value text-warning">{counts.AWAITING_VALIDATION}</div>
             <div className="stat-desc">a person must close these</div>
-          </div>
-        </div>
-
-        <div className="card border border-base-300 bg-base-100 shadow-sm">
-          <div className="card-body gap-2 p-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Model spend</h3>
-              <CircleDollarSign size={16} className="text-accent" />
-            </div>
-            <div className="text-2xl font-semibold">${formatUsd(spend.usedUsd)}</div>
-            <progress
-              className={`progress w-full ${remaining < project.budgetUsd * 0.2 ? "progress-warning" : "progress-accent"}`}
-              value={spend.usedUsd}
-              max={project.budgetUsd}
-            />
-            <p className="text-xs text-base-content/60">
-              ${remaining.toFixed(2)} left of ${project.budgetUsd.toFixed(0)} · {spend.calls} calls ·{" "}
-              {spend.denied} denied
-            </p>
           </div>
         </div>
 

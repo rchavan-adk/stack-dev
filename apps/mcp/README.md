@@ -30,7 +30,7 @@ present in the environment win):
 
 | Variable | Meaning |
 | --- | --- |
-| `DATABASE_URL` | SQLite file backing the Prisma client (`@stack/db`) |
+| `DATABASE_URL` | Postgres URL backing the Prisma client (`@stack/db`) |
 | `STACK_SIGNING_SECRET` | HMAC secret for the short-lived harness download URLs |
 | `STACK_PORTAL_URL` | Portal base URL, used for register/download links |
 | `STACK_MCP_PORT` | HTTP transport port (default 4300) |
@@ -176,7 +176,7 @@ evidence trail on an issue.
 | `stack://templates/issue` | Active ISSUE template: JSON definition + markdown skeleton |
 | `stack://templates/spec` | Same for the SPEC template |
 | `stack://templates/wave` | Same for the WAVE template |
-| `stack://project/{key}/context` | Project summary, open work by status, waves, gateway URL, handle pattern, published harness |
+| `stack://project/{key}/context` | Project summary, open work by status, waves, handle pattern, published harness |
 | `stack://harness/{key}/manifest` | Published pack manifest: version, checksum, components with paths and modes |
 
 Resources are visibility-scoped the same way tools are: a project-scoped token

@@ -13,15 +13,10 @@ name = "{{PACK_NAME}}"
 version = "{{PACK_VERSION}}"
 checksum = "{{PACK_CHECKSUM}}"
 
-[models]
-gateway = "{{GATEWAY_URL}}"
-default = "{{DEFAULT_MODEL}}"
-
 [mcp]
 url = "{{MCP_URL}}"
 
 [enforce]
 commit_item_pattern = "{{HANDLE_PATTERN}}"
-block_non_gateway_calls = true
 protected_branches = ["main", "master", "release"]
 require_verify_before_push = true

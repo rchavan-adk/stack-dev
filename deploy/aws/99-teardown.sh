@@ -40,14 +40,14 @@ delete_quietly() { # description, command...
 #    resources that are being removed.
 # ---------------------------------------------------------------------------
 say "ECS services"
-for svc in "${PREFIX}-portal" "${PREFIX}-mcp" "${PREFIX}-gateway"; do
+for svc in "${PREFIX}-portal" "${PREFIX}-mcp"; do
   aws ecs update-service --cluster "$CLUSTER" --service "$svc" --desired-count 0 >/dev/null 2>&1 || true
   delete_quietly "$svc" aws ecs delete-service --cluster "$CLUSTER" --service "$svc" --force
 done
 
 say "ECS cluster and task definitions"
 delete_quietly "cluster $CLUSTER" aws ecs delete-cluster --cluster "$CLUSTER"
-for app in portal mcp gateway migrate bootstrap; do
+for app in portal mcp migrate bootstrap; do
   for rev in $(aws ecs list-task-definitions --family-prefix "${PREFIX}-${app}" \
       --query 'taskDefinitionArns[]' --output text 2>/dev/null); do
     aws ecs deregister-task-definition --task-definition "$rev" >/dev/null 2>&1 || true
@@ -95,7 +95,7 @@ if [ -n "$ALB_ARN" ] && [ "$ALB_ARN" != "None" ]; then
   # "not deletable yet".
   aws elbv2 wait load-balancers-deleted --load-balancer-arns "$ALB_ARN" || true
 fi
-for tg in "$TG_PORTAL" "$TG_MCP" "$TG_GATEWAY"; do
+for tg in "$TG_PORTAL" "$TG_MCP"; do
   arn="$(tg_arn "$tg")"
   if [ -n "$arn" ] && [ "$arn" != "None" ]; then
     delete_quietly "target group $tg" aws elbv2 delete-target-group --target-group-arn "$arn"
@@ -122,7 +122,7 @@ delete_quietly "ECR repository $ECR_REPO" aws ecr delete-repository --repository
 delete_quietly "log group $LOG_GROUP" aws logs delete-log-group --log-group-name "$LOG_GROUP"
 
 say "SSM parameters"
-for name in ANTHROPIC_API_KEY SIGNING_SECRET WEBHOOK_SECRET DB_PASSWORD DATABASE_URL GITHUB_TOKEN PUBLIC_URL; do
+for name in SIGNING_SECRET WEBHOOK_SECRET DB_PASSWORD DATABASE_URL GITHUB_TOKEN PUBLIC_URL; do
   aws ssm delete-parameter --name "${SSM_PREFIX}/${name}" >/dev/null 2>&1 \
     && note "deleted ${SSM_PREFIX}/${name}" || true
 done

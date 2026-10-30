@@ -72,7 +72,6 @@ export async function POST(request: Request) {
         name: match.project.name,
         client: match.project.client,
         handlePattern: match.project.handlePattern,
-        gatewayUrl: match.project.gatewayUrl,
         defaultBranch: match.defaultBranch,
       },
       registerUrl: `${portalUrl()}/projects/${match.project.key}`,

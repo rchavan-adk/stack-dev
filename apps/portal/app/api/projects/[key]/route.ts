@@ -1,6 +1,6 @@
 import { prisma } from "@stack/db";
 import { authenticate, jsonError } from "@/lib/api-auth";
-import { projectSpend, publishedPack, statusCounts } from "@/lib/queries";
+import { publishedPack, statusCounts } from "@/lib/queries";
 
 export async function GET(request: Request, { params }: { params: Promise<{ key: string }> }) {
   try {
@@ -16,9 +16,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ key:
     });
     if (!project) return Response.json({ error: `Unknown project ${key}` }, { status: 404 });
 
-    const [counts, spend, pack] = await Promise.all([
+    const [counts, pack] = await Promise.all([
       statusCounts(project.id),
-      projectSpend(project.id),
       publishedPack(project.id),
     ]);
 
@@ -30,8 +29,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ key:
         summary: project.summary,
         status: project.status,
         handlePattern: project.handlePattern,
-        gatewayUrl: project.gatewayUrl,
-        budgetUsd: project.budgetUsd,
       },
       waves: project.waves.map((wave) => ({
         number: wave.number,
@@ -44,7 +41,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ key:
         done: wave.issues.filter((issue) => issue.status === "DONE").length,
       })),
       counts,
-      spend: { ...spend, budgetUsd: project.budgetUsd },
       repos: project.repos.map((repo) => ({
         name: repo.name,
         provider: repo.provider,

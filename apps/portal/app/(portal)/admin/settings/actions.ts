@@ -28,20 +28,15 @@ export async function saveDelivery(projectId: string, formData: FormData): Promi
   if (!project) fail("ACME", "That project no longer exists.");
 
   const handlePattern = String(formData.get("handlePattern") ?? "").trim();
-  const gatewayUrl = String(formData.get("gatewayUrl") ?? "").trim();
   const status = String(formData.get("status") ?? "");
-  const budgetUsd = Number(String(formData.get("budgetUsd") ?? "").trim());
 
-  if (!handlePattern || !gatewayUrl) {
-    fail(project.key, "Handle pattern and gateway URL are required.");
+  if (!handlePattern) {
+    fail(project.key, "Handle pattern is required.");
   }
   try {
     new RegExp(handlePattern);
   } catch {
     fail(project.key, `“${handlePattern}” is not a valid regular expression.`);
-  }
-  if (!Number.isFinite(budgetUsd) || budgetUsd < 0) {
-    fail(project.key, "Budget must be a number in USD (0 or more).");
   }
   if (!PROJECT_STATUSES.includes(status)) {
     fail(project.key, "Project status must be active, paused or closed.");
@@ -49,7 +44,7 @@ export async function saveDelivery(projectId: string, formData: FormData): Promi
 
   await prisma.project.update({
     where: { id: projectId },
-    data: { handlePattern, gatewayUrl, budgetUsd, status },
+    data: { handlePattern, status },
   });
   revalidatePath("/admin/settings");
   redirect(`${backTo(project.key)}&saved=delivery`);

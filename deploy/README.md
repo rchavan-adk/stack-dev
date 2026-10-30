@@ -14,7 +14,7 @@ aws login --profile stack     # short-lived credentials, refreshed every 15 min
 ./30-loadbalancer.sh          # ALB and path routing
 ./40-cdn.sh                   # CloudFront, for HTTPS
 ./50-image.sh                 # build for ARM64 and push to ECR
-./60-services.sh              # task definitions, migration, three services
+./60-services.sh              # task definitions, migration, two services
 # open $PUBLIC_URL/setup and create the first administrator
 ./70-bootstrap.sh             # templates and the default harness pack
 ```
@@ -30,18 +30,17 @@ aws login --profile stack     # short-lived credentials, refreshed every 15 min
 | Secrets | SSM Parameter Store | no credential in an image or task definition |
 | Network | 3 security groups | ALB from CloudFront, tasks from ALB, database from tasks |
 
-One container image serves the portal, the MCP server, the model gateway and the
-schema migration. They share `@stack/core`, `@stack/db` and one generated Prisma
-client, so separate images would let those drift apart.
+One container image serves the portal, the MCP server and the schema migration.
+They share `@stack/core`, `@stack/db` and one generated Prisma client, so
+separate images would let those drift apart.
 
 ## Routing
 
-One load balancer, three target groups, distinguished by path:
+One load balancer, two target groups, distinguished by path:
 
 ```
 https://<distribution>.cloudfront.net/         -> portal     :4200
 https://<distribution>.cloudfront.net/mcp      -> MCP server :4300
-https://<distribution>.cloudfront.net/v1/*     -> gateway    :4400
 ```
 
 The load balancer is not reachable from the internet directly. Its security
@@ -56,13 +55,12 @@ Everything runs 24x7 in `us-east-2`. Prices are the published on-demand rates.
 | --- | --- | --- |
 | Fargate, portal | 0.5 vCPU, 1 GB, ARM64 | $14.42 |
 | Fargate, MCP | 0.25 vCPU, 0.5 GB, ARM64 | $7.21 |
-| Fargate, gateway | 0.25 vCPU, 0.5 GB, ARM64 | $7.21 |
 | ALB | 1 load balancer | $18.25 |
 | Public IPv4 | 3 addresses (ALB plus 2 task ENIs) | $10.95 |
 | RDS | `db.t4g.micro`, 20 GB gp3 | $11.68 |
 | EBS | 20 GB gp3 for RDS | $1.60 |
 | CloudFront | inside the always-free tier | $0.00 |
-| **Total** | | **≈ $71** |
+| **Total** | | **≈ $64** |
 
 ARM64 is chosen over x86 because Fargate charges $0.03238 per vCPU-hour for
 Graviton against $0.04048 for x86, and the application is not architecture
@@ -101,9 +99,10 @@ named with the `stack` prefix.
 
 ## Deliberate choices
 
-**No NAT gateway.** Tasks run in public subnets with a public IP so they can
-reach the Anthropic API. A NAT gateway would be $32/month, more than the compute
-it would protect.
+**No NAT gateway.** Tasks run in public subnets with a public IP, which keeps
+image pulls and any outbound call (the GitHub API, once the token is set)
+working without a NAT gateway. A NAT gateway would be $32/month, more than the
+compute it would protect.
 
 **Nothing is seeded.** `npm run db:seed` creates demo users and six API tokens
 whose values are committed to this repository. A deployment uses

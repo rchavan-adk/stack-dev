@@ -27,4 +27,4 @@ returns a template violation, fix the submission and retry; do not work around i
 
 - Prefer repository scripts over ad hoc commands: `ci/stack-verify.sh` before every push.
 - Never run a command that deletes untracked files.
-- Keep network access to the gateway, the portal, and the client's git remote.
+- Keep network access to the portal and the client's git remote.

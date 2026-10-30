@@ -43,7 +43,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ key:
         key: project.key,
         name: project.name,
         handlePattern: project.handlePattern,
-        gatewayUrl: project.gatewayUrl,
       },
       downloadUrl: `/api/harness/download?t=${encodeURIComponent(signed)}`,
       installCommand: "stack harness install",

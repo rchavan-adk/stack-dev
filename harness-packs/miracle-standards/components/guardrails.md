@@ -6,7 +6,6 @@ stop and report the conflict.
 ## Refuse outright
 
 - Committing without a valid Stack AI item handle in the message.
-- Calling any model endpoint other than the engagement gateway in `stack.toml`.
 - Reading, printing, or committing secrets: `.env` files, private keys, tokens, credentials.
 - Pushing directly to `main`, force-pushing a shared branch, or rewriting published history.
 - Changing acceptance criteria, approving a spec, or setting an item to Done.

@@ -6,7 +6,6 @@ import { CheckCircle2, GitPullRequest, Undo2, UserRoundCog } from "lucide-react"
 import { EventKindBadge, IssueStatusBadge, IssueTypeBadge } from "@/components/status";
 import { canAdminister, requireSessionUser } from "@/lib/session";
 import { parseAcceptance } from "@/lib/queries";
-import { formatUsd } from "@/lib/format";
 import { approveIssue, assignIssue, sendBackIssue, validateIssue } from "../../../actions";
 
 export default async function IssueDetailPage({
@@ -25,7 +24,6 @@ export default async function IssueDetailPage({
       assignee: { select: { id: true, name: true, email: true } },
       spec: { include: { approvedBy: { select: { name: true } } } },
       events: { orderBy: { createdAt: "desc" } },
-      modelCalls: { orderBy: { createdAt: "desc" } },
     },
   });
   if (!issue || issue.project.key !== key.toUpperCase()) notFound();
@@ -37,9 +35,6 @@ export default async function IssueDetailPage({
     include: { user: { select: { id: true, name: true } } },
     orderBy: { user: { name: "asc" } },
   });
-  const spend = issue.modelCalls
-    .filter((call) => call.allowed)
-    .reduce((sum, call) => sum + call.costUsd, 0);
   const allowedNext = ISSUE_TRANSITIONS[issue.status as IssueStatus] ?? [];
   const admin = canAdminister(user.role);
 
@@ -260,27 +255,6 @@ export default async function IssueDetailPage({
               )}
               .
             </p>
-          </div>
-        </section>
-
-        <section className="card border border-base-300 bg-base-100 shadow-sm">
-          <div className="card-body gap-2">
-            <h2 className="card-title text-base">Cost of this item</h2>
-            <div className="text-2xl font-semibold">${formatUsd(spend)}</div>
-            <p className="text-xs text-base-content/60">
-              {issue.modelCalls.length} gateway call{issue.modelCalls.length === 1 ? "" : "s"} tagged{" "}
-              <span className="stack-mono">{issue.handle}</span>
-            </p>
-            <ul className="mt-2 space-y-1 text-xs">
-              {issue.modelCalls.slice(0, 6).map((call) => (
-                <li key={call.id} className="flex items-center justify-between gap-2">
-                  <span className="stack-mono truncate">{call.model}</span>
-                  <span className={call.allowed ? "" : "text-error"}>
-                    {call.allowed ? `$${formatUsd(call.costUsd)}` : "denied"}
-                  </span>
-                </li>
-              ))}
-            </ul>
           </div>
         </section>
 

@@ -8,7 +8,7 @@
 #   docker compose up -d db
 #   docker compose run --rm migrate          # apply schema
 #   docker compose run --rm seed             # optional demo data (dev only)
-#   docker compose up -d portal mcp gateway
+#   docker compose up -d portal mcp
 #
 # Postgres listens on 5433 locally so it cannot collide with a Homebrew Postgres
 # already running on 5432.
@@ -18,7 +18,6 @@ x-app-env: &app-env
   STACK_SIGNING_SECRET: ${STACK_SIGNING_SECRET:-local-compose-signing-secret}
   STACK_PORTAL_URL: ${STACK_PORTAL_URL:-http://localhost:4200}
   STACK_MCP_URL: ${STACK_MCP_URL:-http://localhost:4300/mcp}
-  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
 
 services:
   db:
@@ -81,21 +80,6 @@ services:
       STACK_MCP_PORT: "4300"
     ports:
       - "4300:4300"
-    depends_on:
-      db:
-        condition: service_healthy
-
-  gateway:
-    image: stack-app:local
-    build:
-      context: .
-    command: npm -w @stack/gateway run start
-    environment:
-      <<: *app-env
-      STACK_GATEWAY_PORT: "4400"
-      STACK_GATEWAY_REQUIRE_ITEM: "true"
-    ports:
-      - "4400:4400"
     depends_on:
       db:
         condition: service_healthy

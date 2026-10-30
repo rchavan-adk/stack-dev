@@ -60,7 +60,6 @@ export function EventKindBadge({ kind }: { kind: string }) {
     CLAIMED: "badge-info badge-outline",
     STATUS_REPORTED: "badge-info badge-outline",
     HARNESS_INSTALLED: "badge-primary badge-outline",
-    MODEL_CALL: "badge-ghost",
     TEMPLATE_REJECTED: "badge-error badge-outline",
   };
   return (

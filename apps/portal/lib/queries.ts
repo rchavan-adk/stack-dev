@@ -46,26 +46,6 @@ export async function statusCounts(projectId: string): Promise<Record<IssueStatu
   return counts;
 }
 
-export async function projectSpend(projectId: string) {
-  const [allowed, denied] = await Promise.all([
-    prisma.modelCall.aggregate({
-      where: { projectId, allowed: true },
-      _sum: { costUsd: true, tokensIn: true, tokensOut: true },
-      _count: { _all: true },
-    }),
-    prisma.modelCall.count({ where: { projectId, allowed: false } }),
-  ]);
-  return {
-    // Six decimals, matching the ledger: rounding the total to cents here threw
-    // away every sub-cent call before any screen or budget check saw it.
-    usedUsd: Number((allowed._sum.costUsd ?? 0).toFixed(6)),
-    tokensIn: allowed._sum.tokensIn ?? 0,
-    tokensOut: allowed._sum.tokensOut ?? 0,
-    calls: allowed._count._all,
-    denied,
-  };
-}
-
 export async function publishedPack(projectId: string) {
   const pack = await prisma.harnessPack.findFirst({
     where: { projectId },

@@ -27,7 +27,6 @@ export async function run(ctx) {
       ui.kv([
         ["repo", root.split("/").pop()],
         ["remote", remote || "(no origin remote)"],
-        ["gateway", record.gatewayUrl],
         ["mcp", record.mcpUrl],
         ["handle pattern", record.handlePattern],
         [

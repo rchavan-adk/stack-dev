@@ -90,7 +90,7 @@ export default async function MyTokensPage() {
           <div>
             <h2 className="font-semibold">Clients do not need API tokens</h2>
             <p className="text-sm">
-              Your persona login is read-only by design — dashboards, evidence and spend. Tokens
+              Your persona login is read-only by design — dashboards and evidence. Tokens
               exist for machines: the CLI, OpenCode and CI. Ask a lead if you need more.
             </p>
           </div>

@@ -34,9 +34,6 @@ export async function linkProject(ctx, key, { root, detail = null } = {}) {
     checksum: harness.checksum ?? null,
     installedAt: null,
     mcpUrl: await config.resolveMcpUrl(portalUrl, project, ctx.flags),
-    gatewayUrl: project.gatewayUrl
-      ? config.normalizeUrl(project.gatewayUrl)
-      : config.defaultGatewayUrl(portalUrl),
     handlePattern: config.handlePatternFor(project),
     portalUrl,
     linkedAt: new Date().toISOString(),

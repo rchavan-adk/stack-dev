@@ -35,10 +35,6 @@
         {
           "name": "STACK_MCP_URL",
           "value": "__PUBLIC_URL__/mcp"
-        },
-        {
-          "name": "STACK_GATEWAY_URL",
-          "value": "__PUBLIC_URL__"
         }
       ],
       "secrets": [

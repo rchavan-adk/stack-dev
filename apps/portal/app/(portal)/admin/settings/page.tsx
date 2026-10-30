@@ -165,8 +165,7 @@ export default async function AdminSettingsPage({
           </h2>
           <p className="text-sm text-base-content/60">
             The handle pattern is enforced twice: by the commit hook on every developer machine and
-            again server-side when events arrive. The gateway URL is where model calls must go;
-            the budget caps what the portal lets through.
+            again server-side when events arrive.
           </p>
           <form action={saveDelivery.bind(null, project.id)} className="grid gap-4 lg:grid-cols-2">
             <fieldset className="fieldset">
@@ -175,27 +174,6 @@ export default async function AdminSettingsPage({
                 name="handlePattern"
                 defaultValue={project.handlePattern}
                 className="input input-sm w-full stack-mono"
-                required
-              />
-            </fieldset>
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Gateway URL</legend>
-              <input
-                name="gatewayUrl"
-                defaultValue={project.gatewayUrl}
-                className="input input-sm w-full stack-mono"
-                required
-              />
-            </fieldset>
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Budget (USD)</legend>
-              <input
-                name="budgetUsd"
-                type="number"
-                min={0}
-                step="0.01"
-                defaultValue={project.budgetUsd}
-                className="input input-sm w-full"
                 required
               />
             </fieldset>

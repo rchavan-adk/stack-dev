@@ -31,7 +31,6 @@ model User {
   tokens          ApiToken[]
   sessions        Session[]
   approvals       Approval[]
-  modelCalls      ModelCall[]
   publishedPacks  HarnessVersion[] @relation("publisher")
   approvedSpecs   Spec[]           @relation("specApprover")
   invites         Invite[]         @relation("inviteSubject")
@@ -86,8 +85,6 @@ model Project {
   summary       String
   status        String   @default("ACTIVE") // ACTIVE | PAUSED | CLOSED
   handlePattern String   @default("STACK-[0-9]+")
-  gatewayUrl    String   @default("https://litellm.miraclesoft.example")
-  budgetUsd     Float    @default(500)
   webhookBaseUrl String? // public base URL the CLI reports for webhook delivery
   createdAt     DateTime @default(now())
 
@@ -100,7 +97,6 @@ model Project {
   events      Event[]
   tokens      ApiToken[]
   approvals   Approval[]
-  modelCalls  ModelCall[]
 }
 
 model Membership {
@@ -171,7 +167,6 @@ model Issue {
   assignee User?       @relation("assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   spec     Spec?
   events   Event[]
-  modelCalls ModelCall[]
 
   @@index([projectId, status])
 }
@@ -239,7 +234,7 @@ model HarnessVersion {
 model HarnessComponent {
   id        String @id @default(cuid())
   versionId String
-  kind      String // SYSTEM_PROMPT | GUARDRAILS | MEMORY | TOOL_GUIDANCE | SUBAGENTS | SKILLS | SCRIPTS | PLUGINS
+  kind      String // SYSTEM_PROMPT | GUARDRAILS | MEMORY | TOOL_GUIDANCE | SUBAGENTS | SKILLS | SCRIPTS
   path      String // relative path inside the extracted pack
   content   String
   mode      String @default("644") // file mode applied on extraction, hooks need 755
@@ -270,7 +265,7 @@ model Event {
   id        String   @id @default(cuid())
   projectId String
   issueId   String?
-  kind      String // COMMIT | PR_OPENED | PR_MERGED | VALIDATED | CLAIMED | STATUS_REPORTED | HARNESS_INSTALLED | MODEL_CALL | TEMPLATE_REJECTED
+  kind      String // COMMIT | PR_OPENED | PR_MERGED | VALIDATED | CLAIMED | STATUS_REPORTED | HARNESS_INSTALLED | TEMPLATE_REJECTED
   actor     String
   summary   String
   payload   String? // JSON
@@ -294,22 +289,4 @@ model Approval {
 
   project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   approver User    @relation(fields: [approverId], references: [id], onDelete: Cascade)
-}
-
-model ModelCall {
-  id        String   @id @default(cuid())
-  projectId String
-  issueId   String?
-  userId    String?
-  model     String
-  tokensIn  Int      @default(0)
-  tokensOut Int      @default(0)
-  costUsd   Float    @default(0)
-  allowed   Boolean  @default(true)
-  reason    String?
-  createdAt DateTime @default(now())
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  issue   Issue?  @relation(fields: [issueId], references: [id], onDelete: SetNull)
-  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 }

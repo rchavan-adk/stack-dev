@@ -14,8 +14,6 @@ import { exists, readJson, remove, writeJson, writeJsonLine } from "./util.mjs";
 
 export const DEFAULT_PORTAL_URL = "http://localhost:4200";
 export const DEFAULT_HANDLE_PATTERN = "STACK-[0-9]+";
-export const DEFAULT_GATEWAY_PATH = "/api/gateway";
-export const DEFAULT_MODEL_FALLBACK = "gpt-4o-mini";
 
 /**
  * What stack.toml says about the project when the repo runs the org-level
@@ -100,11 +98,6 @@ export async function resolveMcpUrl(portalUrl, projectConfig = null, flags = {})
   // defaulting to a developer's localhost — is what keeps a link made against
   // a deployed portal usable on any machine.
   return `${normalizeUrl(portalUrl)}/mcp`;
-}
-
-export function defaultGatewayUrl(portalUrl) {
-  if (process.env.STACK_GATEWAY_URL) return normalizeUrl(process.env.STACK_GATEWAY_URL);
-  return `${normalizeUrl(portalUrl)}${DEFAULT_GATEWAY_PATH}`;
 }
 
 export function normalizeUrl(value) {

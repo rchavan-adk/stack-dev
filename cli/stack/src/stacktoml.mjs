@@ -40,8 +40,6 @@ export async function readStackToml(repoRoot) {
     projectKey: sections.project?.key ?? "",
     projectName: sections.project?.name ?? "",
     portalUrl: sections.project?.portal_url ?? "",
-    gatewayUrl: sections.models?.gateway ?? "",
-    defaultModel: sections.models?.default ?? "",
     mcpUrl: sections.mcp?.url ?? "",
     handlePattern: sections.enforce?.commit_item_pattern ?? "",
   };

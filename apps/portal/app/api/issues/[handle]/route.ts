@@ -10,7 +10,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ hand
     const issue = await prisma.issue.findUnique({
       where: { handle: handle.toUpperCase() },
       include: {
-        project: { select: { key: true, name: true, handlePattern: true, gatewayUrl: true } },
+        project: { select: { key: true, name: true, handlePattern: true } },
         wave: { select: { number: true, name: true, goal: true, status: true } },
         assignee: { select: { name: true, email: true } },
         spec: true,

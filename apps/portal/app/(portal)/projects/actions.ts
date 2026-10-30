@@ -8,7 +8,6 @@ import { canAdminister, requireSessionUser } from "@/lib/session";
 import { transitionIssue } from "@/lib/issues";
 import { generateWebhookSecret } from "@/lib/github";
 import { isGithubRepoUrl, normaliseBaseUrl } from "@/lib/github-url";
-import { gatewayBaseUrl } from "@/lib/urls";
 
 const registerProjectSchema = z.object({
   key: z.string().min(1, "Project key is required."),
@@ -19,8 +18,6 @@ const registerProjectSchema = z.object({
   provider: z.string().default(""),
   webhookBaseUrl: z.string().default(""),
   handlePattern: z.string().default("STACK-[0-9]+"),
-  gatewayUrl: z.string().default(""),
-  budgetUsd: z.string().default("250"),
   defaultBranch: z.string().default("main"),
 });
 
@@ -45,8 +42,6 @@ export async function registerProject(formData: FormData) {
     provider: text("provider"),
     webhookBaseUrl: text("webhookBaseUrl"),
     handlePattern: text("handlePattern") || "STACK-[0-9]+",
-    gatewayUrl: text("gatewayUrl"),
-    budgetUsd: text("budgetUsd") || "250",
     defaultBranch: text("defaultBranch") || "main",
   });
   if (!parsed.success) {
@@ -57,8 +52,6 @@ export async function registerProject(formData: FormData) {
   const key = input.key.toUpperCase();
   const repoUrl = input.repoUrl;
   const handlePattern = input.handlePattern || "STACK-[0-9]+";
-  const budget = Number(input.budgetUsd);
-  const budgetUsd = Number.isFinite(budget) ? budget : 250;
   const defaultBranch = input.defaultBranch || "main";
 
   // A github.com remote goes through the GitHub App wizard: provider "github",
@@ -96,8 +89,6 @@ export async function registerProject(formData: FormData) {
       client: input.client,
       summary: input.summary || `${input.name} for ${input.client}.`,
       handlePattern,
-      gatewayUrl: input.gatewayUrl || gatewayBaseUrl(),
-      budgetUsd,
       webhookBaseUrl,
       memberships: { create: { userId: user.id, role: user.role === "ADMIN" ? "ADMIN" : "LEAD" } },
       ...(repoName

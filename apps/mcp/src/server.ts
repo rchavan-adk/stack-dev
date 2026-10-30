@@ -382,7 +382,6 @@ function registerProjectList(server: McpServer, ctx: AuthContext): void {
               summary: p.summary,
               status: p.status,
               handlePattern: p.handlePattern,
-              gatewayUrl: p.gatewayUrl,
             })),
           },
         );
@@ -1402,7 +1401,7 @@ function registerProjectContextResource(server: McpServer, ctx: AuthContext): vo
         resources: (await visibleProjects(ctx)).map((p) => ({
           uri: `stack://project/${p.key}/context`,
           name: `${p.key} context`,
-          description: `Delivery context for ${p.name}: waves, open work, gateway, handle pattern`,
+          description: `Delivery context for ${p.name}: waves, open work, handle pattern`,
           mimeType: "text/markdown",
         })),
       }),
@@ -1410,7 +1409,7 @@ function registerProjectContextResource(server: McpServer, ctx: AuthContext): vo
     }),
     {
       description:
-        "Delivery context for a project: summary, waves, open issue counts by status, the model gateway URL and the commit handle pattern. Read this before planning work.",
+        "Delivery context for a project: summary, waves, open issue counts by status, and the commit handle pattern. Read this before planning work.",
       mimeType: "text/markdown",
     },
     async (uri, variables) => {
@@ -1434,9 +1433,7 @@ function registerProjectContextResource(server: McpServer, ctx: AuthContext): vo
         `- Client: ${project.client}`,
         `- Status: ${project.status}`,
         `- Summary: ${project.summary}`,
-        `- Model gateway: ${project.gatewayUrl} (agents must call models through the gateway only)`,
         `- Commit handle pattern: ${project.handlePattern} — every commit message references an issue handle`,
-        `- Budget: $${project.budgetUsd}`,
         "",
         `## Open work (${open} open of ${issues.length})`,
         "",

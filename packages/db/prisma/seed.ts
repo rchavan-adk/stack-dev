@@ -53,7 +53,6 @@ async function main() {
   console.log("seeding Stack AI portal\n");
 
   // Clean in dependency order so reseeding is safe.
-  await prisma.modelCall.deleteMany();
   await prisma.event.deleteMany();
   await prisma.approval.deleteMany();
   await prisma.harnessComponent.deleteMany();
@@ -141,8 +140,6 @@ async function main() {
       summary:
         "Replace the legacy checkout service with a modular order pipeline, fixed bid, three waves.",
       handlePattern: "STACK-[0-9]+",
-      gatewayUrl: "http://localhost:4400",
-      budgetUsd: 500,
     },
   });
 
@@ -153,8 +150,6 @@ async function main() {
       client: "Miracle Software Systems",
       summary: "Internal pilot that proves the harness and the portal before client rollout.",
       handlePattern: "STACK-[0-9]+",
-      gatewayUrl: "http://localhost:4400",
-      budgetUsd: 150,
     },
   });
 
@@ -476,7 +471,7 @@ async function main() {
       packId: pack.id,
       version: manifest.version,
       status: "PUBLISHED",
-      notes: "First Miracle standards pack: commit handle enforcement, gateway-only model calls.",
+      notes: "First Miracle standards pack: commit handle enforcement.",
       checksum,
       publishedAt: new Date("2026-10-18T09:30:00Z"),
       publishedById: lead.id,
@@ -495,7 +490,7 @@ async function main() {
   await prisma.harnessVersion.create({
     data: {
       packId: pack.id,
-      version: "0.2.0",
+      version: "0.3.0",
       status: "DRAFT",
       notes: "Adds a wave-awareness skill and a stricter PR evidence section.",
       components: {
@@ -523,9 +518,9 @@ async function main() {
   await prisma.harnessVersion.create({
     data: {
       packId: defaultPack.id,
-      version: "0.1.0",
+      version: manifest.version,
       status: "PUBLISHED",
-      notes: "Default harness: item-handle commits and gateway-only model calls before a project pack exists.",
+      notes: "Default harness: item-handle commits before a project pack exists.",
       checksum,
       publishedAt: new Date("2026-10-17T09:30:00Z"),
       publishedById: lead.id,
@@ -605,38 +600,6 @@ async function main() {
     });
   }
 
-  const calls = [
-    { handle: "STACK-102", model: "claude-sonnet-5", tokensIn: 18400, tokensOut: 3100, costUsd: 0.92 },
-    { handle: "STACK-103", model: "claude-sonnet-5", tokensIn: 24100, tokensOut: 5200, costUsd: 1.37 },
-    { handle: "STACK-106", model: "gpt-5.2-mini", tokensIn: 9800, tokensOut: 1400, costUsd: 0.21 },
-    { handle: "STACK-104", model: "claude-sonnet-5", tokensIn: 12200, tokensOut: 2600, costUsd: 0.68 },
-  ] as const;
-
-  for (const call of calls) {
-    await prisma.modelCall.create({
-      data: {
-        projectId: acme.id,
-        issueId: issueRecords[call.handle]?.id ?? null,
-        userId: dev.id,
-        model: call.model,
-        tokensIn: call.tokensIn,
-        tokensOut: call.tokensOut,
-        costUsd: call.costUsd,
-        allowed: true,
-      },
-    });
-  }
-
-  await prisma.modelCall.create({
-    data: {
-      projectId: acme.id,
-      userId: dev.id,
-      model: "some-unapproved-model",
-      allowed: false,
-      reason: "Model not on the engagement allowlist",
-    },
-  });
-
   console.log("users      ", await prisma.user.count());
   console.log("projects   ", await prisma.project.count());
   console.log("waves      ", await prisma.wave.count());
@@ -644,7 +607,7 @@ async function main() {
   console.log("templates  ", await prisma.template.count());
   console.log("packs      ", await prisma.harnessPack.count());
   console.log("pack       ", `${manifest.name} ${published.version} (${files.length} files)`);
-  console.log("default    ", `miracle-default 0.1.0 (${files.length} files)`);
+  console.log("default    ", `miracle-default ${manifest.version} (${files.length} files)`);
   console.log("checksum   ", checksum.slice(0, 16));
   console.log("\ndemo API tokens (mock only, deterministic for the docs):");
   for (const entry of tokens) {

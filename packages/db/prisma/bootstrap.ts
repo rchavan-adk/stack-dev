@@ -57,31 +57,47 @@ async function main(): Promise<void> {
     );
   }
 
+  const { manifest, files } = loadPackFromDisk();
+
+  // Idempotent per version: an already-published version is left alone, but a
+  // bumped pack publishes as a new version of the existing pack, so a
+  // deployment that re-runs bootstrap after an upgrade picks it up. The portal
+  // serves the newest published version, and `stack doctor` flags every machine
+  // still running the old one.
   const existing = await prisma.harnessPack.findFirst({
     where: { projectId: null, name: DEFAULT_PACK_NAME },
   });
-  if (existing) {
-    const versions = await prisma.harnessVersion.count({ where: { packId: existing.id } });
-    console.log(`pack       ${DEFAULT_PACK_NAME} already present (${versions} version(s)), left alone`);
+  const packId =
+    existing?.id ??
+    (
+      await prisma.harnessPack.create({
+        data: {
+          projectId: null,
+          name: DEFAULT_PACK_NAME,
+          description:
+            "The Miracle default harness every developer starts with before joining a project.",
+        },
+      })
+    ).id;
+
+  const already = await prisma.harnessVersion.findFirst({
+    where: { packId, version: manifest.version, status: "PUBLISHED" },
+  });
+  if (already) {
+    const versions = await prisma.harnessVersion.count({ where: { packId } });
+    console.log(
+      `pack       ${DEFAULT_PACK_NAME} ${manifest.version} already published (${versions} version(s)), left alone`,
+    );
     return;
   }
 
-  const { manifest, files } = loadPackFromDisk();
-  const pack = await prisma.harnessPack.create({
-    data: {
-      projectId: null,
-      name: DEFAULT_PACK_NAME,
-      description:
-        "The Miracle default harness every developer starts with before joining a project.",
-    },
-  });
   const version = await prisma.harnessVersion.create({
     data: {
-      packId: pack.id,
+      packId,
       version: manifest.version,
       status: "PUBLISHED",
       notes:
-        "Default harness: item-handle commits and gateway-only model calls before a project pack exists.",
+        "Default harness: item-handle commits before a project pack exists.",
       checksum: packChecksum(files),
       publishedAt: new Date(),
       publishedById: publisher.id,

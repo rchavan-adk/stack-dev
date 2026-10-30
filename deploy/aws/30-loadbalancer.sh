@@ -2,11 +2,10 @@
 #
 # Application Load Balancer and path routing.
 #
-# One load balancer fronts all three services, distinguished by path, because a
+# One load balancer fronts both services, distinguished by path, because a
 # second load balancer would double the hourly charge for no benefit:
 #
 #   /mcp*   -> MCP server     (streamable HTTP, and the URL the CLI is pointed at)
-#   /v1/*   -> model gateway  (Anthropic-shaped Messages API)
 #   /*      -> portal         (everything else)
 #
 # The load balancer is the only thing in the whole stack that is internet
@@ -83,8 +82,6 @@ TG_PORTAL_ARN="$(create_tg "$TG_PORTAL" 4200 /api/health)"
 note "$TG_PORTAL -> :4200 /api/health"
 TG_MCP_ARN="$(create_tg "$TG_MCP" 4300 /health)"
 note "$TG_MCP -> :4300 /health"
-TG_GATEWAY_ARN="$(create_tg "$TG_GATEWAY" 4400 /health)"
-note "$TG_GATEWAY -> :4400 /health"
 
 # ---------------------------------------------------------------------------
 # Listener on port 80. CloudFront terminates TLS for viewers and talks to this
@@ -123,7 +120,6 @@ upsert_rule() { # priority path-pattern tg-arn
 
 upsert_rule 10 "/mcp" "$TG_MCP_ARN"
 upsert_rule 11 "/mcp/*" "$TG_MCP_ARN"
-upsert_rule 20 "/v1/*" "$TG_GATEWAY_ARN"
 
 say "load balancer ready"
 note "next: ./40-cdn.sh"

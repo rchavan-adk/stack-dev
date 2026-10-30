@@ -45,7 +45,7 @@ register() { # taskdefs/<name>.json
 }
 
 say "registering task definitions"
-for app in portal mcp gateway migrate; do
+for app in portal mcp migrate; do
   note "$(register "$(dirname "${BASH_SOURCE[0]}")/taskdefs/$app.json")"
 done
 
@@ -100,20 +100,19 @@ create_service() { # name target-group-arn container-name container-port
 say "creating services"
 create_service "${PREFIX}-portal"  "$(tg_arn "$TG_PORTAL")"  portal  4200
 create_service "${PREFIX}-mcp"     "$(tg_arn "$TG_MCP")"     mcp     4300
-create_service "${PREFIX}-gateway" "$(tg_arn "$TG_GATEWAY")" gateway 4400
 
 say "waiting for the services to stabilise (this takes a few minutes)"
 aws ecs wait services-stable --cluster "$CLUSTER" \
-  --services "${PREFIX}-portal" "${PREFIX}-mcp" "${PREFIX}-gateway"
-note "all three services stable"
+  --services "${PREFIX}-portal" "${PREFIX}-mcp"
+note "both services stable"
 
 # ---------------------------------------------------------------------------
 # Prove it answers. The portal is checked through the CDN, which is the same
 # path a user takes, so this exercises TLS, CloudFront, the load balancer and
 # routing rather than just the task.
 #
-# The MCP and gateway services cannot be exercised yet: every one of their
-# routes requires an API token, and a fresh deployment deliberately has none.
+# The MCP service cannot be exercised yet: every one of its routes requires an
+# API token, and a fresh deployment deliberately has none.
 # Their target health is what confirms the process is up and answering on the
 # right port, which is exactly the failure this catches.
 # ---------------------------------------------------------------------------
@@ -131,7 +130,7 @@ else
   printf '    \033[31mportal   %s/api/health   HTTP %s\033[0m\n' "$PUBLIC_URL" "$PORTAL_CODE"
 fi
 
-for pair in "$TG_PORTAL:portal" "$TG_MCP:mcp" "$TG_GATEWAY:gateway"; do
+for pair in "$TG_PORTAL:portal" "$TG_MCP:mcp"; do
   tg="${pair%%:*}"; label="${pair##*:}"
   arn="$(tg_arn "$tg")"
   health="$(aws elbv2 describe-target-health --target-group-arn "$arn" \
@@ -142,7 +141,6 @@ done
 say "deployed"
 note "portal  $PUBLIC_URL"
 note "mcp     $PUBLIC_URL/mcp"
-note "gateway $PUBLIC_URL/v1/messages"
 note ""
 note "The database is empty by design. Open $PUBLIC_URL/setup to create the"
 note "first administrator, which closes the setup route behind you. Then run"
