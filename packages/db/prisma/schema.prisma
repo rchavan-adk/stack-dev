@@ -1,9 +1,13 @@
 // Stack AI portal data model.
-// SQLite for the mock. Moving to Postgres is a datasource change plus `prisma migrate`;
-// string status columns are used instead of enums because SQLite has no enum support.
+//
+// Postgres everywhere: a local server for development, RDS for the deployment,
+// so the database the code is tested against is the database it runs on.
+// Status columns are plain strings rather than Postgres enums: a status set
+// that changes should be a migration of data, not a type rewrite that locks
+// the table.
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
