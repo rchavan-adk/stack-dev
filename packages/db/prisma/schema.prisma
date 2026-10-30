@@ -34,6 +34,31 @@ model User {
   modelCalls      ModelCall[]
   publishedPacks  HarnessVersion[] @relation("publisher")
   approvedSpecs   Spec[]           @relation("specApprover")
+  invites         Invite[]         @relation("inviteSubject")
+  invitesCreated  Invite[]         @relation("inviteCreator")
+}
+
+// Invitations and password resets.
+//
+// Same shape as a session: the link carries a random token and only its sha256
+// is stored, so a leaked row cannot be replayed, and the row is single-use. A
+// user with a null passwordHash is somebody who has been invited but has not
+// chosen a password yet, which is the state this table exists to resolve.
+model Invite {
+  id          String    @id @default(cuid())
+  userId      String
+  tokenHash   String    @unique
+  kind        String // INVITE | RESET
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  user      User  @relation("inviteSubject", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("inviteCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // Browser sessions. The cookie carries a random token; only its sha256 lands

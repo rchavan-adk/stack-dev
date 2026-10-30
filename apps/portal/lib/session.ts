@@ -97,6 +97,18 @@ export function canAdminister(role: string): boolean {
   return role === "ADMIN" || role === "LEAD";
 }
 
+/**
+ * Revoke every session for a user.
+ *
+ * Called when a password is set or reset. A password change that left old
+ * sessions alive would not actually lock anyone out, which is the whole point of
+ * changing it.
+ */
+export async function revokeAllSessions(userId: string): Promise<number> {
+  const result = await prisma.session.deleteMany({ where: { userId } });
+  return result.count;
+}
+
 /** Clients get a read-only view; everything that mutates is hidden from them. */
 export function isReadOnly(role: string): boolean {
   return role === "CLIENT";

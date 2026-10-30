@@ -134,6 +134,14 @@ export default async function LoginPage({
                 </span>
               </div>
 
+              <div className="alert alert-soft text-xs">
+                <span>
+                  Invited but no password yet? Open the link an administrator gave you. Locked out?
+                  Ask an administrator for a reset link — the portal sends no email, so there is no
+                  self-service reset.
+                </span>
+              </div>
+
               {devAccounts.length > 0 && (
                 <div className="rounded-box border border-dashed border-base-300 p-3">
                   <p className="text-xs font-medium">Development accounts</p>

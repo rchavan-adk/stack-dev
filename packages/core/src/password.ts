@@ -79,4 +79,12 @@ export function generateSessionToken(): GeneratedSession {
   return { token, tokenHash: hashToken(token) };
 }
 
+/**
+ * Invitation and password-reset links are the same shape as a session token:
+ * random, single-use, and stored only as a hash. Reusing the generator keeps one
+ * definition of "a secret we hand out once".
+ */
+export const generateInviteToken = generateSessionToken;
+
 export { hashToken as hashSessionToken };
+export { hashToken as hashInviteToken };

@@ -32,7 +32,7 @@ export default async function SetupPage({
               </h1>
               <p className="text-sm text-base-content/60">
                 Nobody has an account here yet. Create the first administrator; everyone else is
-                invited from the portal afterwards.
+                invited from the portal afterwards, on the People page.
               </p>
             </div>
 

@@ -8,6 +8,7 @@ import {
   LogOut,
   Package,
   Settings,
+  Users,
   Waves,
 } from "lucide-react";
 import { Brand } from "./brand";
@@ -27,6 +28,7 @@ const MAIN_NAV: NavItem[] = [
 ];
 
 const ADMIN_NAV: NavItem[] = [
+  { href: "/admin/people", label: "People", icon: Users },
   { href: "/admin/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/admin/harness", label: "Harness packs", icon: Package },
   { href: "/admin/tokens", label: "MCP tokens", icon: KeyRound },
@@ -98,6 +100,11 @@ export function AppShell({
                 <li>
                   <Link href="/settings/tokens">
                     <KeyRound size={16} /> My API tokens
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/settings/password">
+                    <Settings size={16} /> Change password
                   </Link>
                 </li>
                 <li>
