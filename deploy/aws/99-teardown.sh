@@ -90,6 +90,10 @@ ALB_ARN="$(aws elbv2 describe-load-balancers --names "$ALB_NAME" \
   --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || true)"
 if [ -n "$ALB_ARN" ] && [ "$ALB_ARN" != "None" ]; then
   delete_quietly "load balancer" aws elbv2 delete-load-balancer --load-balancer-arn "$ALB_ARN"
+  # Deletion is asynchronous: the target groups cannot be deleted until the
+  # balancer is gone, so wait here rather than leaving them behind as
+  # "not deletable yet".
+  aws elbv2 wait load-balancers-deleted --load-balancer-arns "$ALB_ARN" || true
 fi
 for tg in "$TG_PORTAL" "$TG_MCP" "$TG_GATEWAY"; do
   arn="$(tg_arn "$tg")"

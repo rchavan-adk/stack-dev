@@ -12,7 +12,7 @@ against the engagement budget and attributed to an item.
 
 ```bash
 npm run setup          # install, create schema, seed the mock data
-npm run install:cli    # put `stack` on your PATH (symlink to live source)
+npm run install:cli    # put `stack` on your PATH (a copy — re-run it after CLI changes)
 
 npm run dev:portal     # terminal 1 — portal at http://localhost:4200
 npm run dev:mcp        # terminal 2 — MCP server at http://localhost:4300/mcp
@@ -92,22 +92,25 @@ replayed end-to-end against the mock stack; the outputs below are what it produc
 11. **The bypass story** — `git commit --no-verify` without a handle, then push: the
     **remote pre-receive rejects it**. Local hooks teach; the server decides.
 
-### Tomorrow: the live GitHub steps
+### The live GitHub steps
 
-The mock remote stands in for GitHub; tomorrow the real one takes over:
+The mock remote stands in for GitHub in the demo; the real one takes over the same
+webhooks. This project's portal is deployed at
+`https://d35dllf97gy9iv.cloudfront.net`, so GitHub can reach it directly and no
+tunnel is needed. A locally run portal still has to be exposed:
+`ngrok config add-authtoken <token>` (ngrok is installed via Homebrew), then
+`ngrok http 4200`.
 
 1. **Create the GitHub repo** for the engagement on github.com.
-2. **Expose the portal**: `ngrok config add-authtoken <token>` (ngrok is already
-   installed via Homebrew), then `ngrok http 4200`.
-3. **Register the project** at `/projects/new` with the repo URL **and** the ngrok URL
-   (the webhook base URL).
-4. **Create the GitHub App** from the wizard's link at
+2. **Register the project** at `/projects/new` with the repo URL **and** the portal's
+   public URL (the webhook base URL).
+3. **Create the GitHub App** from the wizard's link at
    `/projects/<KEY>/github-setup` — the manifest is prefilled (webhook URL, secret,
    redirect back to the portal; generate the webhook secret from the wizard if the repo
    has none).
-5. **Install the app on the repo** — read-only contents/pull_requests/metadata is all
+4. **Install the app on the repo** — read-only contents/pull_requests/metadata is all
    it needs.
-6. **Watch for the ping** — the first delivery lands in the project's evidence ledger.
+5. **Watch for the ping** — the first delivery lands in the project's evidence ledger.
 
 ## OpenCode + the Stack MCP server
 
@@ -143,23 +146,27 @@ mock-github/acme-checkout.git   (bare repo, stands in for github.com)
 cli/stack            stack — login, project detect/link, harness install/status,
                      mcp install, issues/claim, model-call, doctor, verify
 apps/portal          Next.js 15 (port 4200) — dashboards, admin, waves, issues,
-                     harness packs, GitHub App wizard, model gateway (policy mock),
+                     harness packs, GitHub App wizard, policy endpoint,
                      git event + webhook receivers
 apps/mcp             MCP server (port 4300) — 17 tools over streamable HTTP,
                      token-scoped (whoami, issues, waves, templates, harness, specs)
-packages/core        shared domain: statuses, transitions, templates, tokens
-packages/db          Prisma schema + seed (SQLite) — the system of record
+apps/gateway         the model gateway (port 4400) — forwards to Anthropic and
+                     meters real usage per item against the engagement budget
+packages/core        shared domain: statuses, transitions, templates, tokens, prices
+packages/db          Prisma schema + seed (PostgreSQL) — the system of record
 harness-packs/       miracle-standards source pack (guiders + blockers)
+deploy/              AWS deployment (ECS Fargate + ALB + CloudFront + RDS),
+                     provisioning scripts and teardown
 ```
 
 ### Real vs mocked — honestly
 
-| Real | Mocked |
+| Real | Mocked or demo-only (local) |
 |---|---|
-| Git evidence: pushes, merges, hook rejections, the evidence ledger | The GitHub side: a local bare repo, not github.com (until tomorrow) |
-| Local hooks (commit-msg, pre-push) and remote enforcement (pre-receive) | The model gateway: a **policy mock** — allowlist, pricing and budget are real decisions, the model is not called |
-| Template enforcement, approval and validation flows, wave planning | Tokens: demo-only strings, deterministic, no real auth |
-| MCP tool surface and role scoping | The portal's model spend is simulated pricing |
+| Git evidence: pushes, merges, hook rejections, the evidence ledger | The GitHub side: a local bare repo, not github.com (until the App is installed) |
+| Local hooks (commit-msg, pre-push) and remote enforcement (pre-receive) | Login personas and demo tokens: deterministic seed data, hidden in production |
+| The model gateway (`apps/gateway`): real Anthropic calls, metered per item against budget | The portal's policy endpoint: answers "is this allowed" without calling or metering |
+| Template enforcement, approvals, wave planning, MCP tool surface and role scoping | Demo spend rows from the seed, for the walkthrough |
 
 ### Enforcement, in one line each
 
