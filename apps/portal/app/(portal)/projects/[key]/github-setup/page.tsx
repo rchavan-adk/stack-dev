@@ -8,10 +8,12 @@ import { isLocalDeployment, portalBaseUrl } from "@/lib/urls";
 import { CopyButton } from "@/components/copy-button";
 import {
   buildAppManifest,
-  githubAppNewUrl,
+  githubAppRegistrationAction,
   githubManifestUrl,
+  githubOwnerIsOrganization,
   githubWebhookUrl,
 } from "@/lib/github";
+import { githubFullNameFromRemote } from "@/lib/github-url";
 import { generateWebhookSecretAction, saveGithubAppId } from "./actions";
 
 function Step({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
@@ -58,6 +60,17 @@ export default async function GithubSetupPage({
         })
       : null;
   const manifestJson = manifest ? JSON.stringify(manifest, null, 2) : "";
+
+  // GitHub takes the manifest as a POST form field, and the address differs for
+  // an organisation, so the owner has to be known before the button renders.
+  const owner = repo ? (githubFullNameFromRemote(repo.remotePath) ?? repo.name).split("/")[0] : "";
+  const registrationAction = manifest
+    ? githubAppRegistrationAction({
+        owner,
+        isOrganization: await githubOwnerIsOrganization(owner),
+        state: project.key,
+      })
+    : "";
 
   return (
     <div className="space-y-6">
@@ -178,29 +191,29 @@ export default async function GithubSetupPage({
                   <Github size={18} /> Create the GitHub App
                 </h2>
                 <p className="text-sm text-base-content/60">
-                  This link opens GitHub with the manifest below prefilled. GitHub creates the app,
-                  then sends you back to the portal to confirm.
+                  This button submits the manifest below to GitHub, which opens the app creation
+                  page with every field prefilled. Confirm there and GitHub sends you straight back
+                  here, connected.
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
-                  <a
-                    href={githubAppNewUrl(baseUrl, project.key)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn btn-primary btn-sm gap-1"
-                  >
-                    <Github size={15} /> Create the GitHub App on GitHub
-                  </a>
+                  <form action={registrationAction} method="post" target="_blank">
+                    <input type="hidden" name="manifest" value={manifestJson} />
+                    <button type="submit" className="btn btn-primary btn-sm gap-1">
+                      <Github size={15} /> Create the GitHub App on GitHub
+                    </button>
+                  </form>
                   <span className="text-xs text-base-content/50">
-                    Manifest served from{" "}
-                    <span className="stack-mono">{manifestUrl}</span>
+                    Submits to <span className="stack-mono">{registrationAction}</span>
                   </span>
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Or create it by hand</h3>
+                  <h3 className="text-sm font-semibold">The manifest being submitted</h3>
                   <p className="text-xs text-base-content/50">
-                    Paste this manifest into{" "}
-                    <span className="stack-mono">github.com/settings/apps/new</span>.
+                    For reference. To create the app by hand instead, use the values in the steps
+                    below at{" "}
+                    <span className="stack-mono">github.com/settings/apps/new</span>; the manifest
+                    itself is also served at <span className="stack-mono">{manifestUrl}</span>.
                   </p>
                   <div className="flex items-start gap-2">
                     <div className="mockup-code min-w-0 flex-1 overflow-x-auto text-xs">

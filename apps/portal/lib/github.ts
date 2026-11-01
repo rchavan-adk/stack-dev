@@ -58,10 +58,45 @@ export function githubManifestUrl(webhookBaseUrl: string, projectKey: string): s
   return `${webhookBaseUrl}/api/github/manifest?project=${projectKey.toUpperCase()}`;
 }
 
-export function githubAppNewUrl(webhookBaseUrl: string, projectKey: string): string {
-  return `https://github.com/apps/new?manifest=${encodeURIComponent(
-    githubManifestUrl(webhookBaseUrl, projectKey),
-  )}`;
+/**
+ * Where the browser POSTs the manifest to register the app.
+ *
+ * GitHub does not accept a manifest by URL on a GET: the manifest JSON has to
+ * arrive as a form field in a POST to this address, and the address differs for
+ * a personal account and an organisation.
+ */
+export function githubAppRegistrationAction(input: {
+  owner: string;
+  isOrganization: boolean;
+  state: string;
+}): string {
+  const query = `?state=${encodeURIComponent(input.state)}`;
+  return input.isOrganization
+    ? `https://github.com/organizations/${encodeURIComponent(input.owner)}/settings/apps/new${query}`
+    : `https://github.com/settings/apps/new${query}`;
+}
+
+/**
+ * Whether the repository owner is an organisation, which decides the address
+ * above. An unreachable or unknown owner falls back to the personal account
+ * form, the common case, rather than failing the page.
+ */
+export async function githubOwnerIsOrganization(owner: string): Promise<boolean> {
+  if (!owner) return false;
+  try {
+    const response = await fetch(`https://api.github.com/users/${encodeURIComponent(owner)}`, {
+      headers: {
+        accept: "application/vnd.github+json",
+        "x-github-api-version": "2022-11-28",
+      },
+      cache: "no-store",
+    });
+    if (!response.ok) return false;
+    const body = (await response.json()) as { type?: unknown };
+    return body.type === "Organization";
+  } catch {
+    return false;
+  }
 }
 
 export function buildAppManifest(input: {
@@ -74,7 +109,9 @@ export function buildAppManifest(input: {
     name: `Stack AI – ${key}`,
     url: input.webhookBaseUrl,
     description: "Stack AI delivery evidence: pushes and pull requests move work on this portal.",
-    redirect_url: `${input.webhookBaseUrl}/projects/${key}/github-setup`,
+    // GitHub sends the temporary code here as a GET redirect; the exchange has
+    // to happen at an endpoint, not on the wizard page, or the code is dropped.
+    redirect_url: `${input.webhookBaseUrl}/api/github/app-callback?project=${key}`,
     hook_attributes: {
       url: githubWebhookUrl(input.webhookBaseUrl),
       active: true,

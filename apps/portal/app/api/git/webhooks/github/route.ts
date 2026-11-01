@@ -46,11 +46,20 @@ const ok = (body: Record<string, unknown>, status = 200) => Response.json(body, 
 export async function POST(request: Request) {
   const raw = await request.text();
 
+  // A manifest-created app may be configured with the form content type, which
+  // wraps the JSON in a `payload` field. The signature covers the raw body
+  // either way, so only the parsing differs.
   let payload: GithubPushPayload & GithubPullRequestPayload;
   try {
     payload = JSON.parse(raw) as GithubPushPayload & GithubPullRequestPayload;
   } catch {
-    return ok({ error: "Body must be JSON" }, 400);
+    const form = new URLSearchParams(raw).get("payload");
+    if (!form) return ok({ error: "Body must be JSON or a form-encoded payload field" }, 400);
+    try {
+      payload = JSON.parse(form) as GithubPushPayload & GithubPullRequestPayload;
+    } catch {
+      return ok({ error: "Body must be JSON or a form-encoded payload field" }, 400);
+    }
   }
 
   const fullName = payload.repository?.full_name ?? "";

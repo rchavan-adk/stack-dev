@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@stack/db";
+import { portalUrl } from "@/lib/urls";
 
 const GITHUB_EXCHANGE = "https://api.github.com/app-manifests";
 
@@ -28,20 +29,37 @@ async function readCode(request: Request, url: URL): Promise<string> {
   return new URLSearchParams(raw).get("code")?.trim() ?? "";
 }
 
+interface ExchangeFailure {
+  ok: false;
+  error: string;
+  guidance: string;
+  status: number;
+}
+
+interface ExchangeSuccess {
+  ok: true;
+  projectKey: string;
+  repoName: string;
+  appId: string;
+  webhookSecretUpdated: boolean;
+}
+
 /**
- * The second half of the manifest flow. GitHub redirects here with a temporary
- * `code`; exchanging it for an access token is how the portal learns the App ID
- * and the webhook secret GitHub generated. No auth header: the code is the proof.
+ * The second half of the manifest flow. GitHub hands over a temporary `code`;
+ * exchanging it is how the portal learns the App ID and the webhook secret
+ * GitHub generated. No auth header: the single-use code is the proof.
  */
-export async function POST(request: Request) {
-  const url = new URL(request.url);
-  const key = (url.searchParams.get("project") ?? "").trim().toUpperCase();
+async function completeManifestFlow(
+  key: string,
+  code: string,
+): Promise<ExchangeSuccess | ExchangeFailure> {
   if (!key) {
-    return bad(
-      "project is required",
-      "GitHub is redirected to /api/github/app-callback?project=<PROJECT KEY>.",
-      400,
-    );
+    return {
+      ok: false,
+      error: "project is required",
+      guidance: "GitHub is redirected to /api/github/app-callback?project=<PROJECT KEY>.",
+      status: 400,
+    };
   }
 
   const project = await prisma.project.findUnique({
@@ -49,35 +67,36 @@ export async function POST(request: Request) {
     include: { repos: { orderBy: { name: "asc" } } },
   });
   if (!project) {
-    return bad(`Unknown project ${key}`, "Register the project in the portal first.", 404);
+    return {
+      ok: false,
+      error: `Unknown project ${key}`,
+      guidance: "Register the project in the portal first.",
+      status: 404,
+    };
   }
 
   const repo = project.repos.find((candidate) => candidate.provider === "github");
   if (!repo) {
-    return bad(
-      `No GitHub repository is linked to ${project.key}`,
-      "Link a github-provider repository before creating the app.",
-      404,
-    );
+    return {
+      ok: false,
+      error: `No GitHub repository is linked to ${project.key}`,
+      guidance: "Link a github-provider repository before creating the app.",
+      status: 404,
+    };
   }
 
-  let code = "";
-  try {
-    code = await readCode(request, url);
-  } catch {
-    code = "";
-  }
   if (!code) {
-    return bad(
-      "Missing code",
-      "GitHub sends a temporary code in the request body; this request carried none.",
-      400,
-    );
+    return {
+      ok: false,
+      error: "Missing code",
+      guidance: "GitHub sends a temporary code with the redirect; this request carried none.",
+      status: 400,
+    };
   }
 
   let exchange: Response;
   try {
-    exchange = await fetch(`${GITHUB_EXCHANGE}/${encodeURIComponent(code)}/access_tokens`, {
+    exchange = await fetch(`${GITHUB_EXCHANGE}/${encodeURIComponent(code)}/conversions`, {
       method: "POST",
       headers: {
         accept: "application/vnd.github+json",
@@ -87,43 +106,51 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("github manifest exchange failed", error);
-    return bad(
-      "Could not reach GitHub",
-      "The portal could not call api.github.com. Check outbound network access and try the paste-back App ID form instead.",
-      502,
-    );
+    return {
+      ok: false,
+      error: "Could not reach GitHub",
+      guidance:
+        "The portal could not call api.github.com. Check outbound network access and use the paste-back App ID form instead.",
+      status: 502,
+    };
   }
 
   if (!exchange.ok) {
     const detail = await exchange.text().catch(() => "");
     console.error("github manifest exchange rejected", exchange.status, detail);
-    return bad(
-      `GitHub rejected the manifest code (${exchange.status})`,
-      "The code is single-use and expires quickly. Start the app creation again from the setup page, or paste the App ID by hand.",
-      502,
-    );
+    return {
+      ok: false,
+      error: `GitHub rejected the manifest code (${exchange.status})`,
+      guidance:
+        "The code is single-use and expires within an hour. Start the app creation again from the setup page, or paste the App ID by hand.",
+      status: 502,
+    };
   }
 
   let payload: { id?: unknown; webhook_secret?: unknown };
   try {
     payload = (await exchange.json()) as { id?: unknown; webhook_secret?: unknown };
   } catch {
-    return bad(
-      "GitHub returned an unreadable response",
-      "Retry the app creation, or paste the App ID by hand.",
-      502,
-    );
+    return {
+      ok: false,
+      error: "GitHub returned an unreadable response",
+      guidance: "Retry the app creation, or paste the App ID by hand.",
+      status: 502,
+    };
   }
 
   const appId = payload.id === undefined || payload.id === null ? "" : String(payload.id);
   if (!appId) {
-    return bad(
-      "GitHub did not return an App ID",
-      "Paste the App ID from the app settings page by hand.",
-      502,
-    );
+    return {
+      ok: false,
+      error: "GitHub did not return an App ID",
+      guidance: "Paste the App ID from the app settings page by hand.",
+      status: 502,
+    };
   }
 
+  // GitHub mints its own webhook secret for a manifest app, which replaces the
+  // one generated at registration. Deliveries are signed with this one.
   const webhookSecret =
     typeof payload.webhook_secret === "string" && payload.webhook_secret.length > 0
       ? payload.webhook_secret
@@ -149,11 +176,55 @@ export async function POST(request: Request) {
   revalidatePath(`/projects/${project.key}/github-setup`);
   revalidatePath(`/projects/${project.key}`);
 
-  return Response.json({
+  return {
     ok: true,
-    project: project.key,
-    repo: repo.name,
+    projectKey: project.key,
+    repoName: repo.name,
     appId,
     webhookSecretUpdated: Boolean(webhookSecret),
+  };
+}
+
+/**
+ * The manifest flow redirects a browser here, so the answer has to be a
+ * redirect back to the wizard rather than JSON a person would have to read.
+ */
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const key = (url.searchParams.get("project") ?? "").trim().toUpperCase();
+  const code = (url.searchParams.get("code") ?? "").trim();
+
+  const result = await completeManifestFlow(key, code);
+  const back = key ? `/projects/${key}/github-setup` : "/projects";
+
+  if (!result.ok) {
+    return Response.redirect(
+      portalUrl(`${back}?error=${encodeURIComponent(`${result.error}. ${result.guidance}`)}`),
+      303,
+    );
+  }
+  return Response.redirect(portalUrl(`${back}?saved=app`), 303);
+}
+
+export async function POST(request: Request) {
+  const url = new URL(request.url);
+  const key = (url.searchParams.get("project") ?? "").trim().toUpperCase();
+
+  let code = "";
+  try {
+    code = await readCode(request, url);
+  } catch {
+    code = "";
+  }
+
+  const result = await completeManifestFlow(key, code);
+  if (!result.ok) return bad(result.error, result.guidance, result.status);
+
+  return Response.json({
+    ok: true,
+    project: result.projectKey,
+    repo: result.repoName,
+    appId: result.appId,
+    webhookSecretUpdated: result.webhookSecretUpdated,
   });
 }
