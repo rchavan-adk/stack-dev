@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  BookOpen,
   Boxes,
   Download,
   Gauge,
@@ -25,6 +26,7 @@ const MAIN_NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: Gauge },
   { href: "/projects", label: "Projects", icon: Boxes },
   { href: "/get-started", label: "Get started", icon: Download },
+  { href: "/docs", label: "Docs", icon: BookOpen },
 ];
 
 const ADMIN_NAV: NavItem[] = [
@@ -76,9 +78,6 @@ export function AppShell({
           </div>
 
           <div className="navbar-end gap-3">
-            <span className="hidden text-xs text-base-content/60 sm:inline">
-              portal runs no AI · evidence only
-            </span>
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-ghost btn-sm gap-2">
                 <div className="avatar avatar-placeholder">
@@ -122,9 +121,7 @@ export function AppShell({
         <main className="flex-1 px-4 py-6 lg:px-8">{children}</main>
 
         <footer className="footer footer-center border-t border-base-300 bg-base-100 p-4 text-xs text-base-content/60">
-          <aside>
-            Stack AI · Miracle Software Systems · the portal holds the record, never the code
-          </aside>
+          <aside>Stack AI · Miracle Software Systems</aside>
         </footer>
       </div>
 

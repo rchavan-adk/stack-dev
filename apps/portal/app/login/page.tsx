@@ -44,7 +44,7 @@ export default async function LoginPage({
           </h1>
           <p className="mt-4 text-white/80">
             Planners submit plans and waves. Developers pull assigned work into their own IDE. Stack
-            AI holds the truth in the middle, runs no AI itself, and never sees client code.
+            AI keeps the record in the middle and never sees client code.
           </p>
 
           <ul className="mt-10 space-y-4 text-sm">
@@ -90,7 +90,8 @@ export default async function LoginPage({
               <div>
                 <h2 className="card-title text-xl">Sign in</h2>
                 <p className="text-sm text-base-content/60">
-                  Your Stack account. Agents and the CLI never use this form.
+                  Your Stack account. Agents and the CLI never use this form — they authenticate
+                  with an MCP token from <span className="stack-mono">/settings/tokens</span>.
                 </p>
               </div>
 
@@ -126,13 +127,6 @@ export default async function LoginPage({
                   Sign in <ArrowRight size={16} />
                 </button>
               </form>
-
-              <div className="alert alert-soft text-xs">
-                <span>
-                  Agents and the CLI never use this login. They authenticate with an MCP token from{" "}
-                  <span className="stack-mono">/settings/tokens</span>.
-                </span>
-              </div>
 
               <div className="alert alert-soft text-xs">
                 <span>

@@ -1,5 +1,3 @@
-import { existsSync } from "node:fs";
-import { join, resolve } from "node:path";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -14,17 +12,8 @@ import {
 import { prisma } from "@stack/db";
 import { requireSessionUser } from "@/lib/session";
 import { publishedPack } from "@/lib/queries";
-import { mcpEndpointUrl, portalBaseUrl } from "@/lib/urls";
+import { mcpEndpointUrl } from "@/lib/urls";
 import { CopyButton } from "@/components/copy-button";
-
-/** The portal runs from apps/portal, so the workspace root is two levels up. */
-function resolveWorkspaceRoot(): string {
-  const candidates = [resolve(process.cwd(), "..", ".."), process.cwd()];
-  return (
-    candidates.find((dir) => existsSync(join(dir, "cli", "stack", "bin", "stack.mjs"))) ??
-    candidates[0]
-  );
-}
 
 const STEPS = [
   { id: "step-1", label: "OpenCode" },
@@ -42,7 +31,7 @@ const DOCTOR_CHECKS = [
   { label: "stack.toml matches the published pack", detail: "the installed version equals the published one", fix: "stack harness install --force" },
   { label: ".stack/pack checksum matches", detail: "the extracted pack is byte-identical to what was published", fix: "stack harness install --force" },
   { label: "git hooks installed and executable", detail: "commit-msg and pre-push present with mode 755", fix: "stack harness install --force" },
-  { label: "Stack MCP server reachable", detail: "the MCP health endpoint answers", fix: "npm run dev:mcp" },
+  { label: "Stack MCP server reachable", detail: "the MCP health endpoint answers", fix: "ask the portal owner if it stays unreachable" },
   { label: "an item is claimed in this session", detail: ".stack/session.json holds a handle", fix: "stack claim STACK-101" },
 ];
 
@@ -57,11 +46,6 @@ const HARNESS_WRITES = [
 export default async function GetStartedPage() {
   const user = await requireSessionUser();
 
-  const workspaceRoot = resolveWorkspaceRoot();
-  const stackBin = join(workspaceRoot, "cli", "stack", "bin", "stack.mjs");
-  const mcpStdio = join(workspaceRoot, "apps", "mcp", "src", "stdio.ts");
-
-  const portalUrl = portalBaseUrl();
   const mcpUrl = mcpEndpointUrl();
 
   const memberships = await prisma.membership.findMany({
@@ -92,31 +76,29 @@ export default async function GetStartedPage() {
     2,
   );
 
-  const opencodeLocal = JSON.stringify(
-    {
-      $schema: "https://opencode.ai/config.json",
-      mcp: {
-        stack: {
-          type: "local",
-          command: ["npx", "tsx", mcpStdio],
-          environment: { STACK_TOKEN: "stk_dev_…" },
-          enabled: true,
-        },
-      },
-    },
-    null,
-    2,
-  );
-
   return (
     <div className="space-y-8">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">Get started</h1>
         <p className="max-w-3xl text-sm text-base-content/60">
-          From a clean machine to enforced work in seven commands. Every block is copy-ready — the
-          portal runs no AI itself, it holds the record and the rules.
+          From a clean machine to enforced work in seven commands. Every block is copy-ready — run
+          them top to bottom.
         </p>
       </header>
+
+      <div className="alert alert-soft text-sm">
+        <span>
+          New here? Follow the guide for your role —{" "}
+          <Link href="/docs/developer" className="link link-hover">
+            developer onboarding
+          </Link>{" "}
+          or{" "}
+          <Link href="/docs/planner" className="link link-hover">
+            planner onboarding
+          </Link>
+          . Both walk a full example end to end.
+        </span>
+      </div>
 
       <ul className="steps steps-vertical w-full lg:steps-horizontal">
         {STEPS.map((step) => (
@@ -162,30 +144,22 @@ export default async function GetStartedPage() {
               <h2 className="card-title text-base">Install the Stack CLI</h2>
             </div>
             <p className="text-sm text-base-content/60">
-              Installs globally from npm. From a local checkout of the portal&apos;s repository it
-              also runs straight from the workspace — no install needed, so alias it and the rest
-              of this page works verbatim.
+              Installs globally from npm. Node 20 or newer.
             </p>
             <div className="flex items-start gap-2">
               <div className="mockup-code w-fit text-xs">
                 <pre data-prefix="$">
                   <code>npm i -g @rchavan.miracle/stack-ai</code>
                 </pre>
-                <pre data-prefix="#">
-                  <code>local checkout: run it from the workspace instead</code>
-                </pre>
                 <pre data-prefix="$">
-                  <code>node {stackBin} --help</code>
-                </pre>
-                <pre data-prefix="$">
-                  <code>alias stack="node {stackBin}"</code>
+                  <code>stack --version</code>
                 </pre>
               </div>
-              <CopyButton text={`alias stack="node ${stackBin}"`} label="Copy alias" />
+              <CopyButton text="npm i -g @rchavan.miracle/stack-ai" />
             </div>
             <p className="text-xs text-base-content/50">
-              Put the alias in your shell profile. Everything below assumes{" "}
-              <code className="stack-mono">stack</code> works in any directory.
+              Everything below assumes <code className="stack-mono">stack</code> works in any
+              directory.
             </p>
           </div>
         </div>
@@ -240,44 +214,28 @@ export default async function GetStartedPage() {
             </div>
             <p className="text-sm text-base-content/60">
               One command writes the entry into <code className="stack-mono">opencode.json</code>{" "}
-              for you (remote mode by default). The two shapes it can write:
+              for you. The shared MCP server authenticates your token on every call:
             </p>
             <div className="flex items-start gap-2">
               <div className="mockup-code w-fit text-xs">
                 <pre data-prefix="$">
                   <code>stack mcp install --agent opencode</code>
                 </pre>
-                <pre data-prefix="$">
-                  <code>stack mcp install --agent opencode --mode local</code>
-                </pre>
               </div>
               <CopyButton text="stack mcp install --agent opencode" />
             </div>
-            <div className="grid gap-4 xl:grid-cols-2">
-              <div className="space-y-1">
-                <h3 className="text-sm font-semibold">Remote (default)</h3>
-                <p className="text-xs text-base-content/50">
-                  The shared MCP server authenticates the token on every call.
-                </p>
-                <div className="mockup-code overflow-x-auto text-xs">
-                  <pre>
-                    <code>{opencodeRemote}</code>
-                  </pre>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-sm font-semibold">Local stdio</h3>
-                <p className="text-xs text-base-content/50">
-                  OpenCode runs the MCP server in-process; needs the workspace built
-                  (<code className="stack-mono">npm run dev:mcp</code>).
-                </p>
-                <div className="mockup-code overflow-x-auto text-xs">
-                  <pre>
-                    <code>{opencodeLocal}</code>
-                  </pre>
-                </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold">The entry it writes</h3>
+              <div className="mockup-code overflow-x-auto text-xs">
+                <pre>
+                  <code>{opencodeRemote}</code>
+                </pre>
               </div>
             </div>
+            <p className="text-xs text-base-content/50">
+              The token is embedded in <code className="stack-mono">opencode.json</code> — keep the
+              file out of commits if the repository is shared.
+            </p>
           </div>
         </div>
 
