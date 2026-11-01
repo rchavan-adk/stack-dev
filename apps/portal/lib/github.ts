@@ -36,12 +36,14 @@ export interface GithubAppManifest {
   url: string;
   description: string;
   redirect_url: string;
+  /**
+   * GitHub rejects a manifest carrying any key beyond these two here, so the
+   * content type and the secret cannot be declared: it mints its own secret and
+   * hands it back through the callback exchange.
+   */
   hook_attributes: {
     url: string;
     active: boolean;
-    content_type: "json";
-    secret: string;
-    insecure_ssl: "0";
   };
   callback_urls: string[];
   setup_url: string;
@@ -102,7 +104,6 @@ export async function githubOwnerIsOrganization(owner: string): Promise<boolean>
 export function buildAppManifest(input: {
   projectKey: string;
   webhookBaseUrl: string;
-  webhookSecret: string;
 }): GithubAppManifest {
   const key = input.projectKey.toUpperCase();
   return {
@@ -115,9 +116,6 @@ export function buildAppManifest(input: {
     hook_attributes: {
       url: githubWebhookUrl(input.webhookBaseUrl),
       active: true,
-      content_type: "json",
-      secret: input.webhookSecret,
-      insecure_ssl: "0",
     },
     callback_urls: [`${input.webhookBaseUrl}/api/github/app-callback?project=${key}`],
     setup_url: `${input.webhookBaseUrl}/projects/${key}/github-setup`,

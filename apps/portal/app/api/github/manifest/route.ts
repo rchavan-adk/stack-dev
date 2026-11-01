@@ -55,23 +55,11 @@ export async function GET(request: Request) {
     );
   }
 
-  if (!repo.webhookSecret) {
-    return Response.json(
-      {
-        error: `Repository ${repo.name} has no webhook secret`,
-        guidance:
-          "The secret signs deliveries. Register the project again with a GitHub remote, or re-link the repository so the portal generates one.",
-      },
-      { status: 400 },
-    );
-  }
-
+  // No webhook secret is required here: GitHub mints one for a manifest app and
+  // returns it through the callback exchange. A pre-generated secret only
+  // matters for the paste-it-in-by-hand path.
   return Response.json(
-    buildAppManifest({
-      projectKey: project.key,
-      webhookBaseUrl: baseUrl,
-      webhookSecret: repo.webhookSecret,
-    }),
+    buildAppManifest({ projectKey: project.key, webhookBaseUrl: baseUrl }),
     { headers: { "cache-control": "no-store" } },
   );
 }

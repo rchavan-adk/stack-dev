@@ -52,13 +52,7 @@ export default async function GithubSetupPage({
   const webhookUrl = baseUrl ? githubWebhookUrl(baseUrl) : null;
   const manifestUrl = baseUrl ? githubManifestUrl(baseUrl, project.key) : null;
   const manifest =
-    baseUrl && repo?.webhookSecret
-      ? buildAppManifest({
-          projectKey: project.key,
-          webhookBaseUrl: baseUrl,
-          webhookSecret: repo.webhookSecret,
-        })
-      : null;
+    baseUrl && repo ? buildAppManifest({ projectKey: project.key, webhookBaseUrl: baseUrl }) : null;
   const manifestJson = manifest ? JSON.stringify(manifest, null, 2) : "";
 
   // GitHub takes the manifest as a POST form field, and the address differs for
