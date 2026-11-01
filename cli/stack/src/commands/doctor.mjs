@@ -259,7 +259,12 @@ async function checkMcp(ctx, state) {
         const name = body?.name ?? body?.server ?? "stack-mcp";
         return { ...base, ok: true, detail: `${name} at ${url}` };
       }
-      return { ...base, ok: false, detail: `${url} answered ${response.status}`, fix: "npm run dev:mcp" };
+      return {
+        ...base,
+        ok: false,
+        detail: `${url} answered ${response.status}`,
+        fix: "ask the portal owner — the MCP server is unhealthy",
+      };
     } catch {
       /* try the next candidate */
     }
@@ -268,7 +273,7 @@ async function checkMcp(ctx, state) {
     ...base,
     ok: false,
     detail: `${candidates[0]} unreachable`,
-    fix: "npm run dev:mcp",
+    fix: "ask the portal owner if the MCP URL stays unreachable",
   };
 }
 

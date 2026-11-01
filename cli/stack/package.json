@@ -1,6 +1,6 @@
 {
   "name": "@rchavan.miracle/stack-ai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The stack CLI for the Stack AI delivery system of record: login, project link, harness install, issues, doctor.",
   "license": "UNLICENSED",
   "publishConfig": {
