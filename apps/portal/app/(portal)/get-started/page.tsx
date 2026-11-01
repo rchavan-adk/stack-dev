@@ -169,7 +169,7 @@ export default async function GetStartedPage() {
             <div className="flex items-start gap-2">
               <div className="mockup-code w-fit text-xs">
                 <pre data-prefix="$">
-                  <code>npm i -g stack-ai</code>
+                  <code>npm i -g @rchavan.miracle/stack-ai</code>
                 </pre>
                 <pre data-prefix="#">
                   <code>local checkout: run it from the workspace instead</code>

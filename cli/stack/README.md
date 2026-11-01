@@ -1,4 +1,4 @@
-# stack-ai
+# @rchavan.miracle/stack-ai
 
 The `stack` CLI for the [Stack AI](https://github.com/rchavan-adk/stack-dev)
 delivery system of record.
@@ -11,7 +11,7 @@ harness pack, claim work, and check their setup.
 ## Install
 
 ```bash
-npm i -g stack-ai
+npm i -g @rchavan.miracle/stack-ai
 ```
 
 Requires Node 20 or newer.
