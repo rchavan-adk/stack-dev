@@ -6,7 +6,7 @@ import { canAdminister, requireSessionUser } from "@/lib/session";
 import { AdminDenied } from "@/components/admin-gate";
 import { formatDate } from "@/lib/format";
 import { nextDraftVersion } from "@/lib/version";
-import { cloneVersion, createDraft, publishVersion } from "./actions";
+import { cloneVersion, createDraft, initializeProjectHarness, publishVersion } from "./actions";
 
 function VersionStatusBadge({ status }: { status: string }) {
   const cls =
@@ -17,7 +17,7 @@ function VersionStatusBadge({ status }: { status: string }) {
 export default async function HarnessAdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ published?: string; error?: string }>;
+  searchParams: Promise<{ published?: string; initialized?: string; error?: string }>;
 }) {
   const user = await requireSessionUser();
   if (!canAdminister(user.role)) return <AdminDenied user={user} />;
@@ -68,6 +68,14 @@ export default async function HarnessAdminPage({
           </span>
         </div>
       )}
+      {query.initialized && (
+        <div className="alert alert-success text-sm">
+          <span>
+            Initialized the <span className="stack-mono">{query.initialized}</span> harness with an
+            editable draft cloned from the org default.
+          </span>
+        </div>
+      )}
       {query.error && (
         <div className="alert alert-error text-sm">
           <span>{query.error}</span>
@@ -87,9 +95,14 @@ export default async function HarnessAdminPage({
             {project.packs.length === 0 && (
               <div className="alert alert-info text-sm">
                 <span>
-                  No harness pack for {project.key} yet. Packs are seeded with the project; this
-                  page manages versions of existing packs.
+                  No harness pack for {project.key} yet. Initialize one from the org default, then
+                  edit and publish the draft for this project.
                 </span>
+                <form action={initializeProjectHarness.bind(null, project.id)}>
+                  <button type="submit" className="btn btn-primary btn-sm">
+                    Initialize project harness
+                  </button>
+                </form>
               </div>
             )}
 

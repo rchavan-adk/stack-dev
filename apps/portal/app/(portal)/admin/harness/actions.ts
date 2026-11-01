@@ -6,8 +6,33 @@ import { prisma } from "@stack/db";
 import { canAdminister, requireSessionUser } from "@/lib/session";
 import { packChecksum } from "@/lib/harness";
 import { nextDraftVersion } from "@/lib/version";
+import { createInitialProjectHarness } from "@/lib/project-harness";
 
 const VERSION_RE = /^\d+\.\d+\.\d+$/;
+
+export async function initializeProjectHarness(projectId: string): Promise<void> {
+  const user = await requireSessionUser();
+  if (!canAdminister(user.role)) {
+    redirect(`/admin/harness?error=${encodeURIComponent("Initializing a harness needs lead or admin rights.")}`);
+  }
+
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { key: true },
+  });
+  if (!project) {
+    redirect(`/admin/harness?error=${encodeURIComponent("That project no longer exists.")}`);
+  }
+
+  const result = await createInitialProjectHarness(projectId);
+  if (!result.created) {
+    redirect(`/admin/harness?error=${encodeURIComponent(result.reason ?? "Could not initialize the project harness.")}`);
+  }
+
+  revalidatePath("/admin/harness");
+  revalidatePath(`/projects/${project.key}/harness`);
+  redirect(`/admin/harness?initialized=${encodeURIComponent(project.key)}`);
+}
 
 /**
  * Publishing stamps the version PUBLISHED, freezes who published it and when,

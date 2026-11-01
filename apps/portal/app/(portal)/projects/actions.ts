@@ -8,6 +8,7 @@ import { canAdminister, requireSessionUser } from "@/lib/session";
 import { transitionIssue } from "@/lib/issues";
 import { generateWebhookSecret } from "@/lib/github";
 import { isGithubRepoUrl, normaliseBaseUrl } from "@/lib/github-url";
+import { createInitialProjectHarness } from "@/lib/project-harness";
 
 const registerProjectSchema = z.object({
   key: z.string().min(1, "Project key is required."),
@@ -107,12 +108,16 @@ export async function registerProject(formData: FormData) {
     },
   });
 
+  const harness = await createInitialProjectHarness(project.id);
+
   await prisma.event.create({
     data: {
       projectId: project.id,
       kind: "STATUS_REPORTED",
       actor: user.name,
-      summary: `project ${project.key} registered${repoName ? ` with repository ${repoName}` : ""}`,
+      summary:
+        `project ${project.key} registered${repoName ? ` with repository ${repoName}` : ""}` +
+        (harness.created ? " with an initial harness draft" : ""),
     },
   });
 
