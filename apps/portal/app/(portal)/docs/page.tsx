@@ -22,8 +22,8 @@ export default async function DocsPage() {
               <Code2 size={18} /> Developer
             </h2>
             <p className="text-sm text-base-content/60">
-              You write code in your own IDE with OpenCode, and Stack holds the record of what you
-              were assigned and what you shipped.
+              You write code with Claude Code, and Stack holds the record of what you were assigned
+              and what you shipped.
             </p>
             <ul className="space-y-1 text-sm text-base-content/70">
               <li>Install the CLI from npm, log in with a token</li>
@@ -92,7 +92,7 @@ export default async function DocsPage() {
                 </tr>
                 <tr>
                   <td className="stack-mono">MCP server</td>
-                  <td>OpenCode, day to day</td>
+                  <td>Claude Code, day to day</td>
                   <td className="text-base-content/70">
                     Exposes your project, issues and claim tools to the agent, authenticated by
                     your token.
@@ -102,7 +102,8 @@ export default async function DocsPage() {
                   <td className="stack-mono">Harness pack</td>
                   <td>Both — files in the repository</td>
                   <td className="text-base-content/70">
-                    AGENTS.md, templates and git hooks that enforce the standards locally.
+                    CLAUDE.md, AGENTS.md, templates and git hooks that enforce the standards
+                    locally.
                   </td>
                 </tr>
               </tbody>

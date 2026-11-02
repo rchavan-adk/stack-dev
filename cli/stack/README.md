@@ -27,7 +27,7 @@ stack link <KEY>                  # ...or link a project directly by key
 
 stack harness install             # download, verify and install the harness pack
 stack harness status              # what is installed vs what the portal publishes
-stack mcp install --agent opencode
+stack mcp install --agent claude
 
 stack issues --mine               # your assigned work
 stack claim STACK-101             # claim an item; sets the session item
@@ -37,7 +37,8 @@ stack verify                      # run the pack's verification script
 ```
 
 Commits whose message carries no item handle (`STACK-101: ...`) are rejected by
-the installed git hooks, and again by the server.
+the installed git hooks. The portal records handle-less deliveries as unlinked,
+so the local hook is what prevents silent loss of evidence.
 
 ## Configuration
 

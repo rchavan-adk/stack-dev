@@ -490,9 +490,9 @@ async function main() {
   await prisma.harnessVersion.create({
     data: {
       packId: pack.id,
-      version: "0.3.0",
+      version: "0.4.0",
       status: "DRAFT",
-      notes: "Adds a wave-awareness skill and a stricter PR evidence section.",
+      notes: "Claude Code project guidance and a stricter PR evidence section.",
       components: {
         create: files.map((file) => ({
           kind: file.kind,

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Stack AI MCP server — stdio transport. This is what OpenCode launches as a
- * local MCP server. All logs go to stderr; stdout carries the protocol.
+ * Stack AI MCP server — stdio transport. This is what a local coding agent
+ * launches as an MCP server. All logs go to stderr; stdout carries the protocol.
  */
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { loadEnv } from "./env.js";

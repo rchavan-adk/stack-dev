@@ -16,13 +16,12 @@ import { mcpEndpointUrl } from "@/lib/urls";
 import { CopyButton } from "@/components/copy-button";
 
 const STEPS = [
-  { id: "step-1", label: "OpenCode" },
-  { id: "step-2", label: "Stack CLI" },
-  { id: "step-3", label: "Login" },
-  { id: "step-4", label: "MCP" },
-  { id: "step-5", label: "Detect" },
-  { id: "step-6", label: "Harness" },
-  { id: "step-7", label: "Doctor" },
+  { id: "step-1", label: "Stack CLI" },
+  { id: "step-2", label: "Login" },
+  { id: "step-3", label: "MCP" },
+  { id: "step-4", label: "Detect" },
+  { id: "step-5", label: "Harness" },
+  { id: "step-6", label: "Doctor" },
 ];
 
 const DOCTOR_CHECKS = [
@@ -38,6 +37,7 @@ const DOCTOR_CHECKS = [
 const HARNESS_WRITES = [
   [".stack/pack/", "the extracted pack components, file modes preserved"],
   ["stack.toml", "rendered from the pack's stack.toml.template"],
+  ["CLAUDE.md", "the project guidance Claude Code reads automatically"],
   ["AGENTS.md", "rendered from the pack's agents/AGENTS.md"],
   [".git/hooks/commit-msg", "blocks commits whose message carries no handle"],
   [".git/hooks/pre-push", "blocks pushes to protected branches"],
@@ -60,14 +60,12 @@ export default async function GetStartedPage() {
     })),
   );
 
-  const opencodeRemote = JSON.stringify(
+  const claudeRemote = JSON.stringify(
     {
-      $schema: "https://opencode.ai/config.json",
-      mcp: {
+      mcpServers: {
         stack: {
-          type: "remote",
+          type: "http",
           url: mcpUrl,
-          enabled: true,
           headers: { Authorization: "Bearer stk_dev_…" },
         },
       },
@@ -81,7 +79,7 @@ export default async function GetStartedPage() {
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">Get started</h1>
         <p className="max-w-3xl text-sm text-base-content/60">
-          From a clean machine to enforced work in seven commands. Every block is copy-ready — run
+          From a clean machine to enforced work in six steps. Every block is copy-ready — run
           them top to bottom.
         </p>
       </header>
@@ -111,40 +109,18 @@ export default async function GetStartedPage() {
       </ul>
 
       <div className="space-y-6">
-        {/* 1. OpenCode */}
+        {/* 1. Stack CLI */}
         <div id="step-1" className="card scroll-mt-24 border border-base-300 bg-base-100">
           <div className="card-body gap-4">
             <div className="flex items-center gap-2">
               <span className="badge badge-secondary badge-sm">1</span>
-              <h2 className="card-title text-base">Install OpenCode</h2>
+              <h2 className="card-title flex items-center gap-2 text-base">
+                Install the Stack CLI
+              </h2>
             </div>
             <p className="text-sm text-base-content/60">
-              The IDE agent this harness is written for. The version installed locally is{" "}
-              <span className="stack-mono">1.18.30</span>.
-            </p>
-            <div className="flex items-start gap-2">
-              <div className="mockup-code w-fit text-xs">
-                <pre data-prefix="$">
-                  <code>curl -fsSL https://opencode.ai/install | bash</code>
-                </pre>
-                <pre data-prefix="$">
-                  <code>opencode --version</code>
-                </pre>
-              </div>
-              <CopyButton text="curl -fsSL https://opencode.ai/install | bash" />
-            </div>
-          </div>
-        </div>
-
-        {/* 2. Stack CLI */}
-        <div id="step-2" className="card scroll-mt-24 border border-base-300 bg-base-100">
-          <div className="card-body gap-4">
-            <div className="flex items-center gap-2">
-              <span className="badge badge-secondary badge-sm">2</span>
-              <h2 className="card-title text-base">Install the Stack CLI</h2>
-            </div>
-            <p className="text-sm text-base-content/60">
-              Installs globally from npm. Node 20 or newer.
+              Your coding agent is assumed to be installed already. This guide uses Claude Code.
+              Install the Stack CLI with Node 20 or newer.
             </p>
             <div className="flex items-start gap-2">
               <div className="mockup-code w-fit text-xs">
@@ -157,34 +133,23 @@ export default async function GetStartedPage() {
               </div>
               <CopyButton text="npm i -g @rchavan.miracle/stack-ai" />
             </div>
-            <p className="text-xs text-base-content/50">
-              Everything below assumes <code className="stack-mono">stack</code> works in any
-              directory.
-            </p>
           </div>
         </div>
 
-        {/* 3. Login */}
-        <div id="step-3" className="card scroll-mt-24 border border-base-300 bg-base-100">
+        {/* 2. Login */}
+        <div id="step-2" className="card scroll-mt-24 border border-base-300 bg-base-100">
           <div className="card-body gap-4">
             <div className="flex items-center gap-2">
-              <span className="badge badge-secondary badge-sm">3</span>
+              <span className="badge badge-secondary badge-sm">2</span>
               <h2 className="card-title flex items-center gap-2 text-base">
                 <KeyRound size={18} /> Log in
               </h2>
             </div>
             <p className="text-sm text-base-content/60">
-              <code className="stack-mono">stack login</code> asks for a token without echoing it
-              and validates it before saving. Create yours first:
+              Create a developer token at <Link href="/settings/tokens" className="link">/settings/tokens</Link>,
+              then run <code className="stack-mono">stack login</code>. The token is saved locally
+              with restricted permissions.
             </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Link href="/settings/tokens" className="btn btn-secondary btn-sm">
-                Open /settings/tokens
-              </Link>
-              <span className="text-xs text-base-content/50">
-                the exact page <code className="stack-mono">stack login</code> prints
-              </span>
-            </div>
             <div className="flex items-start gap-2">
               <div className="mockup-code w-fit text-xs">
                 <pre data-prefix="$">
@@ -196,54 +161,50 @@ export default async function GetStartedPage() {
               </div>
               <CopyButton text="stack login" />
             </div>
-            <p className="text-xs text-base-content/50">
-              The token is stored at <code className="stack-mono">~/.stack/credentials.json</code>{" "}
-              (mode 0600). Its role decides what the MCP allows.
-            </p>
           </div>
         </div>
 
-        {/* 4. MCP */}
-        <div id="step-4" className="card scroll-mt-24 border border-base-300 bg-base-100">
+        {/* 3. MCP */}
+        <div id="step-3" className="card scroll-mt-24 border border-base-300 bg-base-100">
           <div className="card-body gap-4">
             <div className="flex items-center gap-2">
-              <span className="badge badge-secondary badge-sm">4</span>
+              <span className="badge badge-secondary badge-sm">3</span>
               <h2 className="card-title flex items-center gap-2 text-base">
-                <Plug size={18} /> Wire the MCP server into OpenCode
+                <Plug size={18} /> Connect Claude Code to Stack MCP
               </h2>
             </div>
             <p className="text-sm text-base-content/60">
-              One command writes the entry into <code className="stack-mono">opencode.json</code>{" "}
-              for you. The shared MCP server authenticates your token on every call:
+              This writes a project-level <code className="stack-mono">.mcp.json</code> entry that
+              Claude Code reads automatically:
             </p>
             <div className="flex items-start gap-2">
               <div className="mockup-code w-fit text-xs">
                 <pre data-prefix="$">
-                  <code>stack mcp install --agent opencode</code>
+                  <code>stack mcp install --agent claude</code>
                 </pre>
               </div>
-              <CopyButton text="stack mcp install --agent opencode" />
+              <CopyButton text="stack mcp install --agent claude" />
             </div>
             <div className="space-y-1">
               <h3 className="text-sm font-semibold">The entry it writes</h3>
               <div className="mockup-code overflow-x-auto text-xs">
                 <pre>
-                  <code>{opencodeRemote}</code>
+                  <code>{claudeRemote}</code>
                 </pre>
               </div>
             </div>
             <p className="text-xs text-base-content/50">
-              The token is embedded in <code className="stack-mono">opencode.json</code> — keep the
-              file out of commits if the repository is shared.
+              The token is embedded in <code className="stack-mono">.mcp.json</code>. Keep the file
+              out of commits if the repository is shared.
             </p>
           </div>
         </div>
 
-        {/* 5. Detect */}
-        <div id="step-5" className="card scroll-mt-24 border border-base-300 bg-base-100">
+        {/* 4. Detect */}
+        <div id="step-4" className="card scroll-mt-24 border border-base-300 bg-base-100">
           <div className="card-body gap-4">
             <div className="flex items-center gap-2">
-              <span className="badge badge-secondary badge-sm">5</span>
+              <span className="badge badge-secondary badge-sm">4</span>
               <h2 className="card-title flex items-center gap-2 text-base">
                 <Radar size={18} /> Link your repository
               </h2>
@@ -263,9 +224,9 @@ export default async function GetStartedPage() {
                   <CheckCircle2 size={16} className="text-success" /> Registered
                 </div>
                 <p className="text-base-content/70">
-                  The repo matched a project. Pick the project by number and the CLI writes{" "}
-                  <code className="stack-mono">.stack/project.json</code> — portal and
-                  MCP URLs included.
+                  The repo matched a project. The CLI writes{" "}
+                  <code className="stack-mono">.stack/project.json</code> with the project and MCP
+                  URLs.
                 </p>
               </div>
               <div className="rounded-box border border-warning/40 bg-base-200 p-3 text-sm">
@@ -273,21 +234,19 @@ export default async function GetStartedPage() {
                   <ClipboardList size={16} className="text-warning" /> Not registered
                 </div>
                 <p className="text-base-content/70">
-                  The CLI prints the registration URL,{" "}
-                  <code className="stack-mono">/projects/new?repo=&lt;name&gt;</code>. Open it,
-                  create the project (a lead approves), then re-run detect or link straight away
-                  with <code className="stack-mono">stack link &lt;KEY&gt;</code>.
+                  Open the registration URL it prints, create the project, then rerun detect or
+                  link directly with <code className="stack-mono">stack link &lt;KEY&gt;</code>.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 6. Harness */}
-        <div id="step-6" className="card scroll-mt-24 border border-base-300 bg-base-100">
+        {/* 5. Harness */}
+        <div id="step-5" className="card scroll-mt-24 border border-base-300 bg-base-100">
           <div className="card-body gap-4">
             <div className="flex items-center gap-2">
-              <span className="badge badge-secondary badge-sm">6</span>
+              <span className="badge badge-secondary badge-sm">5</span>
               <h2 className="card-title flex items-center gap-2 text-base">
                 <Package size={18} /> Install the harness pack
               </h2>
@@ -372,11 +331,11 @@ export default async function GetStartedPage() {
           </div>
         </div>
 
-        {/* 7. Doctor */}
-        <div id="step-7" className="card scroll-mt-24 border border-base-300 bg-base-100">
+        {/* 6. Doctor */}
+        <div id="step-6" className="card scroll-mt-24 border border-base-300 bg-base-100">
           <div className="card-body gap-4">
             <div className="flex items-center gap-2">
-              <span className="badge badge-secondary badge-sm">7</span>
+              <span className="badge badge-secondary badge-sm">6</span>
               <h2 className="card-title flex items-center gap-2 text-base">
                 <Stethoscope size={18} /> Check everything
               </h2>
@@ -422,8 +381,8 @@ export default async function GetStartedPage() {
                 <span className="badge badge-primary badge-sm mt-0.5 shrink-0">commit</span>
                 <span>
                   A commit whose message carries no handle matching the project pattern is rejected
-                  locally by <code className="stack-mono">commit-msg</code> — and rejected again
-                  server-side when the event arrives.
+                  locally by <code className="stack-mono">commit-msg</code>. Handle-less deliveries
+                  are recorded as unlinked and do not move a card.
                 </span>
               </li>
               <li className="flex gap-3">

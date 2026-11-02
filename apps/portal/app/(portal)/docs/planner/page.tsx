@@ -82,8 +82,8 @@ export default async function PlannerGuidePage() {
               <Link href="/admin/templates" className="link link-hover">Templates</Link> (admin).
             </li>
             <li>
-              The harness pack — AGENTS.md, the templates developers&apos; agents read, and the git
-              hooks — is versioned under{" "}
+              The harness pack — CLAUDE.md, AGENTS.md, the templates developers&apos; agents read,
+              and the git hooks — is versioned under{" "}
               <Link href="/admin/harness" className="link link-hover">Harness packs</Link> (admin).
               The default pack is already published.
             </li>

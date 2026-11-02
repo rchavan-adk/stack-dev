@@ -55,7 +55,7 @@ export default async function MyTokensPage() {
         <h1 className="text-2xl font-semibold">My API tokens</h1>
         <p className="max-w-3xl text-sm text-base-content/60">
           This is the page <code className="stack-mono">stack login</code> points you at. A token
-          signs the CLI, OpenCode and CI into the portal — it never grants the persona login.
+          signs the CLI, Claude Code and CI into the portal — it never grants the persona login.
           Signed in as {user.name} <RoleBadge role={user.role} />
         </p>
       </header>
@@ -91,7 +91,7 @@ export default async function MyTokensPage() {
             <h2 className="font-semibold">Clients do not need API tokens</h2>
             <p className="text-sm">
               Your persona login is read-only by design — dashboards and evidence. Tokens
-              exist for machines: the CLI, OpenCode and CI. Ask a lead if you need more.
+              exist for machines: the CLI, Claude Code and CI. Ask a lead if you need more.
             </p>
           </div>
         </div>

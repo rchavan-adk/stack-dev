@@ -1,18 +1,13 @@
 import { CopyButton } from "./copy-button";
 
-/**
- * The two ways a token is used: the OpenCode remote MCP entry (Authorization
- * header) and the CLI login. Both snippets are copy-ready apart from the token.
- */
+/** The two ways a token is used: Claude Code MCP and the CLI login. */
 export function TokenUsage({ portalUrl, mcpUrl }: { portalUrl: string; mcpUrl: string }) {
-  const opencode = JSON.stringify(
+  const claude = JSON.stringify(
     {
-      $schema: "https://opencode.ai/config.json",
-      mcp: {
+      mcpServers: {
         stack: {
-          type: "remote",
+          type: "http",
           url: mcpUrl,
-          enabled: true,
           headers: { Authorization: "Bearer stk_dev_…" },
         },
       },
@@ -27,18 +22,18 @@ export function TokenUsage({ portalUrl, mcpUrl }: { portalUrl: string; mcpUrl: s
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="card border border-base-300 bg-base-100">
         <div className="card-body gap-2">
-          <h3 className="card-title text-sm">OpenCode · remote MCP</h3>
+          <h3 className="card-title text-sm">Claude Code · remote MCP</h3>
           <p className="text-xs text-base-content/60">
-            The Authorization header authenticates every tool call. <code className="stack-mono">stack mcp install --agent opencode</code>{" "}
-            writes this entry into <code className="stack-mono">opencode.json</code> with the real
-            token embedded.
+            The Authorization header authenticates every tool call.{" "}
+            <code className="stack-mono">stack mcp install --agent claude</code> writes this entry
+            into <code className="stack-mono">.mcp.json</code> with the real token embedded.
           </p>
           <div className="mockup-code text-xs">
             <pre>
-              <code>{opencode}</code>
+              <code>{claude}</code>
             </pre>
           </div>
-          <CopyButton text={opencode} label="Copy JSON" />
+          <CopyButton text={claude} label="Copy JSON" />
         </div>
       </div>
 

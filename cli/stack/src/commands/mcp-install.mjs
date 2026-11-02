@@ -1,5 +1,5 @@
 /**
- * `stack mcp install [--agent opencode|droid|claude] [--mode remote|local]`
+ * `stack mcp install [--agent claude|droid] [--mode remote|local]`
  *
  * Writes the Stack MCP server into the agent config the developer already uses,
  * preserving every other key in that file.
@@ -15,14 +15,13 @@ import { maskToken } from "../render.mjs";
 export const meta = {
   name: "mcp install",
   summary: "Wire the Stack MCP server into your agent",
-  usage: "stack mcp install [--agent opencode|droid|claude] [--mode remote|local]",
+  usage: "stack mcp install [--agent claude|droid] [--mode remote|local]",
   detail:
-    "opencode.json for opencode, .factory/mcp.json for droid, .mcp.json for claude.\n" +
+    ".mcp.json for Claude Code or .factory/mcp.json for Droid.\n" +
     "Existing keys in those files are preserved.",
 };
 
 const AGENTS = {
-  opencode: { file: "opencode.json", wrapper: "mcp", schema: "https://opencode.ai/config.json" },
   droid: { file: ".factory/mcp.json", wrapper: "mcpServers" },
   claude: { file: ".mcp.json", wrapper: "mcpServers" },
 };
@@ -41,24 +40,34 @@ export async function run(ctx) {
     throw new UsageError(`--mode must be remote or local, got "${mode}"`, { fix: meta.usage });
   }
 
+  const portalUrl = await config.resolvePortalUrl(ctx.flags);
   const mcpUrl = config.normalizeUrl(
-    link?.mcpUrl || (await config.resolveMcpUrl(link, ctx.flags)),
+    link?.mcpUrl || (await config.resolveMcpUrl(portalUrl, link, ctx.flags)),
   );
   const workspace = await config.workspaceRoot(root);
   const stdio = config.mcpStdioPath(workspace);
 
   const entry =
     mode === "local"
-      ? {
-          type: "local",
-          command: ["npx", "tsx", stdio],
-          environment: { STACK_TOKEN: token },
-          enabled: true,
-        }
+      ? agent === "claude"
+        ? {
+            type: "stdio",
+            command: "npx",
+            args: ["tsx", stdio],
+            env: { STACK_TOKEN: token },
+          }
+        : {
+            type: "local",
+            command: ["npx", "tsx", stdio],
+            environment: { STACK_TOKEN: token },
+            enabled: true,
+          }
       : {
-          type: "remote",
+          // Claude Code uses the MCP transport name "http" for a
+          // streamable-HTTP server. Keep the legacy remote shape for Droid.
+          type: agent === "claude" ? "http" : "remote",
           url: mcpUrl,
-          enabled: true,
+          ...(agent === "droid" ? { enabled: true } : {}),
           headers: { Authorization: `Bearer ${token}` },
         };
 
@@ -120,6 +129,5 @@ async function resolveAgent(ctx, root) {
   }
   if (await exists(path.join(root, ".factory"))) return "droid";
   if (await exists(path.join(root, ".mcp.json"))) return "claude";
-  if (await exists(path.join(root, "opencode.json"))) return "opencode";
-  return "opencode";
+  return "claude";
 }

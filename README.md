@@ -58,18 +58,18 @@ replayed end-to-end against the mock stack; the outputs below are what it produc
    the database; the session cookie takes you to that persona's dashboard.
 2. **Akash (lead) → terminal, in a clone of the repo** —
    `stack login --token stk_lead_akash_demo_token_001`, then `stack project detect`
-   (matches **ACME**), `stack harness install` (miracle-standards 0.2.0, hooks armed),
-   `stack mcp install --agent opencode` (writes `opencode.json`), `stack doctor`
+   (matches **ACME**), `stack harness install` (miracle-standards 0.3.0, hooks armed),
+   `stack mcp install --agent claude` (writes `.mcp.json`), `stack doctor`
    (6/7 green — nothing claimed yet).
-3. **Akash → `/admin/harness`** — publish the updated pack: clone the 0.3.0 draft to a
+3. **Akash → `/admin/harness`** — publish the updated pack: clone the 0.4.0 draft to a
    new draft, publish. `GET /api/projects/ACME/harness/current` then returns
-   **0.3.0 PUBLISHED** with a freshly stamped checksum.
+   **0.4.0 PUBLISHED** with a freshly stamped checksum.
 4. **Sana (cold developer) → terminal** — `stack login --token stk_dev_sana_demo_token_0001`
    (zero projects, hint to install the default harness), `stack harness install`
    (miracle-default 0.2.0), `stack doctor` — all green.
 5. **Akash → `/admin/settings`** — add Sana to ACME as DEVELOPER. **Sana → terminal** —
    `stack project link ACME`, `stack harness install` (pack switch: miracle-default
-   0.2.0 → **miracle-standards 0.3.0**), `stack harness status` shows 0.3.0, doctor green.
+   0.2.0 → **miracle-standards 0.4.0**), `stack harness status` shows 0.4.0, doctor green.
 6. **Akash → MCP (JSON-RPC over HTTP)** — `stack_template_get` for the ISSUE kind
    (sections context/scope/acceptance/out-of-scope, fields type/estimate/wave, ≥2
    acceptance criteria), then `stack_issue_create` — expect a new **BACKLOG** item with
@@ -108,17 +108,17 @@ tunnel is needed. A locally run portal still has to be exposed:
    it needs.
 5. **Watch for the ping** — the first delivery lands in the project's evidence ledger.
 
-## OpenCode + the Stack MCP server
+## Claude Code + the Stack MCP server
 
-Wire the MCP server into opencode (remote, bearer-token auth):
+Wire the MCP server into Claude Code with a project-level `.mcp.json` (remote,
+bearer-token auth):
 
 ```json
 {
-  "mcp": {
+  "mcpServers": {
     "stack": {
-      "type": "remote",
+      "type": "http",
       "url": "http://localhost:4300/mcp",
-      "enabled": true,
       "headers": {
         "Authorization": "Bearer stk_lead_akash_demo_token_001"
       }
@@ -127,9 +127,13 @@ Wire the MCP server into opencode (remote, bearer-token auth):
 }
 ```
 
-Or let the CLI write it: `stack mcp install --agent opencode` (also `--agent droid` or
-`--agent claude`; `--mode local` for a stdio server). The CLI masks the token in its
-output; the config file embeds the real one — keep it out of commits.
+Or let the CLI write it: `stack mcp install --agent claude`. The CLI masks the
+token in its output; the config file embeds the real one — keep it out of commits.
+
+The harness download is not Markdown-only. The portal returns a signed `.tgz`
+archive containing Markdown guidance, `CLAUDE.md`, `AGENTS.md`, TOML templates,
+JSON metadata, shell hooks and verification scripts. File modes are preserved,
+so downloaded blockers remain executable.
 
 ## Architecture
 

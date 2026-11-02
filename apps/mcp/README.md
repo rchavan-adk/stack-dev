@@ -1,7 +1,7 @@
 # Stack AI MCP server
 
-The model-facing surface of the Stack AI delivery platform. Coding agents
-(OpenCode, Claude Code, anything MCP-capable) authenticate with a portal-issued
+The model-facing surface of the Stack AI delivery platform. Claude Code and
+other MCP-capable coding agents authenticate with a portal-issued
 API token, see exactly the tools their role allows, and every mutation they
 make lands in the portal's evidence ledger.
 
@@ -10,7 +10,7 @@ Two transports, one server implementation:
 | Transport | Entry | Use |
 | --- | --- | --- |
 | Streamable HTTP (stateless) | `src/http.ts` → `POST http://localhost:4300/mcp` | Remote agents, CI, the portal |
-| stdio | `src/stdio.ts` | Local MCP servers launched by OpenCode |
+| stdio | `src/stdio.ts` | Local MCP servers launched by a coding agent |
 
 ## Running
 
@@ -76,18 +76,16 @@ HTTP behavior:
 - One stderr line per tool call: `timestamp [token-prefix] tool outcome` where
   outcome is `ok`, `refused` or `error`.
 
-## OpenCode configuration
+## Claude Code configuration
 
 Remote mode (HTTP transport):
 
 ```json
 {
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
+  "mcpServers": {
     "stack": {
-      "type": "remote",
+      "type": "http",
       "url": "http://localhost:4300/mcp",
-      "enabled": true,
       "headers": {
         "Authorization": "Bearer stk_dev_rahul_demo_token_0001"
       }
@@ -100,12 +98,11 @@ Local mode (stdio transport, from the workspace root):
 
 ```json
 {
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
+  "mcpServers": {
     "stack": {
-      "type": "local",
-      "enabled": true,
-      "command": ["npm", "-w", "@stack/mcp", "run", "stdio", "--", "--token", "stk_dev_rahul_demo_token_0001"]
+      "type": "stdio",
+      "command": "npm",
+      "args": ["-w", "@stack/mcp", "run", "stdio", "--", "--token", "stk_dev_rahul_demo_token_0001"]
     }
   }
 }

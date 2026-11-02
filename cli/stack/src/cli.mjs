@@ -128,7 +128,7 @@ const COMMANDS = [
     group: "Harness",
     flags: { agent: "value", mode: "value" },
     summary: "Wire the Stack MCP server into your agent",
-    usage: "stack mcp install [--agent opencode|droid|claude] [--mode remote|local]",
+    usage: "stack mcp install [--agent claude|droid] [--mode remote|local]",
   },
   {
     name: "doctor",

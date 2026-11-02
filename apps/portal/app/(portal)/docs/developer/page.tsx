@@ -16,15 +16,15 @@ const SETUP = [
   ["npm i -g @rchavan.miracle/stack-ai", "installs the CLI (Node 20+)"],
   ["stack login", "paste the token from /settings/tokens"],
   ["stack project detect", "links this repository to your project"],
-  ["stack harness install", "writes AGENTS.md, templates and git hooks"],
-  ["stack mcp install --agent opencode", "wires the MCP server into opencode.json"],
+  ["stack harness install", "writes CLAUDE.md, AGENTS.md, templates and git hooks"],
+  ["stack mcp install --agent claude", "wires the Stack MCP server into Claude Code"],
   ["stack doctor", "all seven checks green"],
 ];
 
 const LOOP = [
   ["stack issues --mine", "what is assigned to you right now"],
   ["stack claim STACK-106", "marks it in progress, records this session"],
-  ["work on a branch", "OpenCode reads the issue through the stack MCP server"],
+  ["work on a branch", "Claude Code reads the issue through the Stack MCP server"],
   ["commit with the handle", "STACK-106 in the message — the hook rejects it otherwise"],
   ["push and open the PR", "the handle in the PR title moves the card to in review"],
   ["merge", "the card moves to awaiting validation; your lead validates it"],
@@ -49,7 +49,7 @@ export default async function DeveloperGuidePage() {
           <h2 className="card-title text-base">What you need</h2>
           <ul className="list-inside list-disc space-y-1 text-sm text-base-content/70">
             <li>
-              <strong>OpenCode</strong> — the IDE agent the harness is written for.
+              <strong>Claude Code</strong> — the coding agent used with this guide.
             </li>
             <li>
               <strong>Node 20 or newer</strong> — for the Stack CLI.
@@ -156,12 +156,12 @@ export default async function DeveloperGuidePage() {
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold">2. Work it with OpenCode</h3>
+            <h3 className="text-sm font-semibold">2. Work it with Claude Code</h3>
             <p className="text-sm text-base-content/70">
-              Tell OpenCode: <em>&ldquo;finish STACK-106&rdquo;</em>. Through the stack MCP server
+              Tell Claude Code: <em>&ldquo;finish STACK-106&rdquo;</em>. Through the stack MCP server
               it reads the issue and the project context; from the repository it reads{" "}
-              <span className="stack-mono">AGENTS.md</span> and the templates the harness
-              installed. It writes the code; you review it as always.
+              <span className="stack-mono">CLAUDE.md</span>, <span className="stack-mono">AGENTS.md</span>{" "}
+              and the templates the harness installed. It writes the code; you review it as always.
             </p>
           </div>
 
@@ -182,9 +182,8 @@ export default async function DeveloperGuidePage() {
               <CopyButton text='git commit -m "STACK-106 export the quarterly spend report"' />
             </div>
             <p className="text-xs text-base-content/50">
-              The second commit never lands — the hook installed by{" "}
-              <span className="stack-mono">stack harness install</span> rejects it locally, and the
-              portal would reject the event again server-side.
+              The second commit never lands because the hook installed by{" "}
+              <span className="stack-mono">stack harness install</span> rejects it locally.
             </p>
           </div>
 

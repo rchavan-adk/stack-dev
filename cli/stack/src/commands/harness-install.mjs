@@ -6,9 +6,9 @@
  * linked to a project yet (or --default was passed). Then
  * GET .../harness/current -> download the gzipped tar -> verify its checksum ->
  * extract to .stack/pack preserving modes -> install the blockers into
- * .git/hooks -> render stack.toml and AGENTS.md -> POST /api/harness/installed.
+ * .git/hooks -> render stack.toml, AGENTS.md and CLAUDE.md -> POST /api/harness/installed.
  *
- * An existing AGENTS.md or stack.toml is never overwritten without --force. The
+ * An existing generated guide or stack.toml is never overwritten without --force. The
  * one exception is a pack switch: when the portal publishes a different pack than
  * the one installed (default -> project, or a new project version) the files are
  * replaced cleanly so the repo moves to the new pack. Otherwise the CLI prints a
@@ -43,7 +43,7 @@ export const meta = {
   usage: "stack harness install [--force] [--default] [--project KEY]",
   detail:
     "Downloads the pack the portal publishes, extracts it to .stack/pack, installs\n" +
-    "the commit-msg and pre-push blockers, and renders stack.toml and AGENTS.md.\n" +
+    "the commit-msg and pre-push blockers, and renders stack.toml, CLAUDE.md and AGENTS.md.\n" +
     "Without a project link (or with --default) it installs the org-level default pack.",
 };
 
@@ -117,14 +117,14 @@ export async function run(ctx) {
     HANDLE_PATTERN: handlePattern,
   };
 
-  // With no project there is nothing to list, so AGENTS.md points at the first
+  // With no project there is nothing to list, so the generated guides point at the first
   // handle of the demo engagement (STACK-100) instead of a placeholder.
   const exampleHandle = target.default
     ? "STACK-100"
     : (await ctx.soft(api.issues(target.key, { mine: true }), null))?.issues?.[0]?.handle ??
       "STACK-101";
 
-  // 4. a pack switch replaces stack.toml and AGENTS.md without needing --force.
+  // 4. a pack switch replaces stack.toml and generated guides without needing --force.
   // "Installed" means what is actually on disk: `stack project link` records the
   // published pack but installs nothing, so the install record alone cannot tell
   // us whether the repo is already governed by a different pack.
@@ -155,6 +155,14 @@ export async function run(ctx) {
       root,
       target: "AGENTS.md",
       templatePath: path.join(packDir, "agents", "AGENTS.md"),
+      values: { ...values, EXAMPLE_HANDLE: exampleHandle },
+      force: overwrite,
+      reason: force ? "force" : switched ? "switch" : "",
+    }),
+    await renderFile({
+      root,
+      target: "CLAUDE.md",
+      templatePath: path.join(packDir, "agents", "CLAUDE.md"),
       values: { ...values, EXAMPLE_HANDLE: exampleHandle },
       force: overwrite,
       reason: force ? "force" : switched ? "switch" : "",
