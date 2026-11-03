@@ -8,7 +8,7 @@
   },
   "type": "module",
   "bin": {
-    "stack": "./bin/stack.mjs"
+    "stack": "bin/stack.mjs"
   },
   "files": [
     "bin",
